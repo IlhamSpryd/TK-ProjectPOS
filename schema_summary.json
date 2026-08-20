@@ -1,0 +1,1263 @@
+{
+  "categories": {
+    "columns": [
+      {
+        "name": "id",
+        "def": "uuid DEFAULT gen_random_uuid() NOT NULL"
+      },
+      {
+        "name": "parent_id",
+        "def": "uuid"
+      },
+      {
+        "name": "name",
+        "def": "character varying(100) NOT NULL"
+      },
+      {
+        "name": "active",
+        "def": "boolean DEFAULT true NOT NULL"
+      },
+      {
+        "name": "created_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      },
+      {
+        "name": "updated_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      }
+    ],
+    "fks": [
+      {
+        "column": "parent_id",
+        "ref_table": "categories",
+        "ref_column": "id"
+      }
+    ]
+  },
+  "customers": {
+    "columns": [
+      {
+        "name": "id",
+        "def": "uuid DEFAULT gen_random_uuid() NOT NULL"
+      },
+      {
+        "name": "name",
+        "def": "character varying(100) NOT NULL"
+      },
+      {
+        "name": "email",
+        "def": "character varying(100)"
+      },
+      {
+        "name": "phone",
+        "def": "character varying(20)"
+      },
+      {
+        "name": "address",
+        "def": "text"
+      },
+      {
+        "name": "npwp",
+        "def": "character varying(30)"
+      },
+      {
+        "name": "loyalty_points",
+        "def": "integer DEFAULT 0 NOT NULL"
+      },
+      {
+        "name": "active",
+        "def": "boolean DEFAULT true NOT NULL"
+      },
+      {
+        "name": "created_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      },
+      {
+        "name": "updated_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      }
+    ],
+    "fks": []
+  },
+  "discounts": {
+    "columns": [
+      {
+        "name": "id",
+        "def": "uuid DEFAULT gen_random_uuid() NOT NULL"
+      },
+      {
+        "name": "store_id",
+        "def": "uuid"
+      },
+      {
+        "name": "name",
+        "def": "character varying(100) NOT NULL"
+      },
+      {
+        "name": "type",
+        "def": "character varying(20) NOT NULL"
+      },
+      {
+        "name": "value",
+        "def": "numeric(15"
+      },
+      {
+        "name": "start_date",
+        "def": "timestamp with time zone"
+      },
+      {
+        "name": "end_date",
+        "def": "timestamp with time zone"
+      },
+      {
+        "name": "active",
+        "def": "boolean DEFAULT true NOT NULL"
+      },
+      {
+        "name": "created_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      },
+      {
+        "name": "CONSTRAINT",
+        "def": "chk_discounts_value_positive CHECK ((value >= (0)::numeric))"
+      },
+      {
+        "name": "CONSTRAINT",
+        "def": "discounts_type_check CHECK (((type)::text = ANY ((ARRAY['percentage'::character varying"
+      }
+    ],
+    "fks": [
+      {
+        "column": "store_id",
+        "ref_table": "stores",
+        "ref_column": "id"
+      }
+    ]
+  },
+  "expenses": {
+    "columns": [
+      {
+        "name": "id",
+        "def": "uuid DEFAULT gen_random_uuid() NOT NULL"
+      },
+      {
+        "name": "store_id",
+        "def": "uuid NOT NULL"
+      },
+      {
+        "name": "staff_id",
+        "def": "uuid NOT NULL"
+      },
+      {
+        "name": "category",
+        "def": "character varying(50)"
+      },
+      {
+        "name": "amount",
+        "def": "numeric(15"
+      },
+      {
+        "name": "description",
+        "def": "text"
+      },
+      {
+        "name": "expense_date",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      },
+      {
+        "name": "created_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      },
+      {
+        "name": "CONSTRAINT",
+        "def": "chk_expenses_amount_positive CHECK ((amount > (0)::numeric))"
+      }
+    ],
+    "fks": [
+      {
+        "column": "staff_id",
+        "ref_table": "staff",
+        "ref_column": "id"
+      },
+      {
+        "column": "store_id",
+        "ref_table": "stores",
+        "ref_column": "id"
+      }
+    ]
+  },
+  "inventory_movements": {
+    "columns": [
+      {
+        "name": "id",
+        "def": "uuid DEFAULT gen_random_uuid() NOT NULL"
+      },
+      {
+        "name": "variant_id",
+        "def": "uuid NOT NULL"
+      },
+      {
+        "name": "store_id",
+        "def": "uuid NOT NULL"
+      },
+      {
+        "name": "movement_type",
+        "def": "character varying(20) NOT NULL"
+      },
+      {
+        "name": "quantity_change",
+        "def": "numeric(15"
+      },
+      {
+        "name": "reference_table",
+        "def": "character varying(50)"
+      },
+      {
+        "name": "reference_id",
+        "def": "uuid"
+      },
+      {
+        "name": "note",
+        "def": "text"
+      },
+      {
+        "name": "staff_id",
+        "def": "uuid"
+      },
+      {
+        "name": "created_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      },
+      {
+        "name": "CONSTRAINT",
+        "def": "inventory_movements_movement_type_check CHECK (((movement_type)::text = ANY ((ARRAY['sale'::character varying"
+      }
+    ],
+    "fks": [
+      {
+        "column": "staff_id",
+        "ref_table": "staff",
+        "ref_column": "id"
+      },
+      {
+        "column": "store_id",
+        "ref_table": "stores",
+        "ref_column": "id"
+      },
+      {
+        "column": "variant_id",
+        "ref_table": "product_variants",
+        "ref_column": "id"
+      }
+    ]
+  },
+  "inventory_stock": {
+    "columns": [
+      {
+        "name": "id",
+        "def": "uuid DEFAULT gen_random_uuid() NOT NULL"
+      },
+      {
+        "name": "variant_id",
+        "def": "uuid NOT NULL"
+      },
+      {
+        "name": "store_id",
+        "def": "uuid NOT NULL"
+      },
+      {
+        "name": "quantity",
+        "def": "numeric(15"
+      },
+      {
+        "name": "reorder_point",
+        "def": "numeric(15"
+      },
+      {
+        "name": "updated_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      },
+      {
+        "name": "CONSTRAINT",
+        "def": "chk_inventory_stock_quantity_nonnegative CHECK ((quantity >= (0)::numeric))"
+      }
+    ],
+    "fks": [
+      {
+        "column": "store_id",
+        "ref_table": "stores",
+        "ref_column": "id"
+      },
+      {
+        "column": "variant_id",
+        "ref_table": "product_variants",
+        "ref_column": "id"
+      }
+    ]
+  },
+  "payments": {
+    "columns": [
+      {
+        "name": "id",
+        "def": "uuid DEFAULT gen_random_uuid() NOT NULL"
+      },
+      {
+        "name": "sale_id",
+        "def": "uuid NOT NULL"
+      },
+      {
+        "name": "payment_method",
+        "def": "character varying(30) NOT NULL"
+      },
+      {
+        "name": "amount",
+        "def": "numeric(15"
+      },
+      {
+        "name": "change_amount",
+        "def": "numeric(15"
+      },
+      {
+        "name": "reference_no",
+        "def": "character varying(50)"
+      },
+      {
+        "name": "paid_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      }
+    ],
+    "fks": [
+      {
+        "column": "sale_id",
+        "ref_table": "sales",
+        "ref_column": "id"
+      }
+    ]
+  },
+  "product_variants": {
+    "columns": [
+      {
+        "name": "id",
+        "def": "uuid DEFAULT gen_random_uuid() NOT NULL"
+      },
+      {
+        "name": "product_id",
+        "def": "uuid NOT NULL"
+      },
+      {
+        "name": "sku",
+        "def": "character varying(50) NOT NULL"
+      },
+      {
+        "name": "barcode",
+        "def": "character varying(50)"
+      },
+      {
+        "name": "attributes",
+        "def": "jsonb DEFAULT '{}'::jsonb NOT NULL"
+      },
+      {
+        "name": "cost_price",
+        "def": "numeric(15"
+      },
+      {
+        "name": "selling_price",
+        "def": "numeric(15"
+      },
+      {
+        "name": "active",
+        "def": "boolean DEFAULT true NOT NULL"
+      },
+      {
+        "name": "deleted_at",
+        "def": "timestamp with time zone"
+      },
+      {
+        "name": "created_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      },
+      {
+        "name": "updated_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      }
+    ],
+    "fks": [
+      {
+        "column": "product_id",
+        "ref_table": "products",
+        "ref_column": "id"
+      }
+    ]
+  },
+  "products": {
+    "columns": [
+      {
+        "name": "id",
+        "def": "uuid DEFAULT gen_random_uuid() NOT NULL"
+      },
+      {
+        "name": "category_id",
+        "def": "uuid"
+      },
+      {
+        "name": "supplier_id",
+        "def": "uuid"
+      },
+      {
+        "name": "tax_category_id",
+        "def": "uuid"
+      },
+      {
+        "name": "name",
+        "def": "character varying(150) NOT NULL"
+      },
+      {
+        "name": "description",
+        "def": "text"
+      },
+      {
+        "name": "image_url",
+        "def": "text"
+      },
+      {
+        "name": "unit",
+        "def": "character varying(20) DEFAULT 'pcs'::character varying NOT NULL"
+      },
+      {
+        "name": "sku",
+        "def": "character varying(50) NOT NULL"
+      },
+      {
+        "name": "track_stock",
+        "def": "boolean DEFAULT true NOT NULL"
+      },
+      {
+        "name": "is_service",
+        "def": "boolean DEFAULT false NOT NULL"
+      },
+      {
+        "name": "active",
+        "def": "boolean DEFAULT true NOT NULL"
+      },
+      {
+        "name": "deleted_at",
+        "def": "timestamp with time zone"
+      },
+      {
+        "name": "created_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      },
+      {
+        "name": "updated_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      }
+    ],
+    "fks": [
+      {
+        "column": "category_id",
+        "ref_table": "categories",
+        "ref_column": "id"
+      },
+      {
+        "column": "supplier_id",
+        "ref_table": "suppliers",
+        "ref_column": "id"
+      },
+      {
+        "column": "tax_category_id",
+        "ref_table": "tax_categories",
+        "ref_column": "id"
+      }
+    ]
+  },
+  "purchase_order_items": {
+    "columns": [
+      {
+        "name": "id",
+        "def": "uuid DEFAULT gen_random_uuid() NOT NULL"
+      },
+      {
+        "name": "purchase_order_id",
+        "def": "uuid NOT NULL"
+      },
+      {
+        "name": "variant_id",
+        "def": "uuid NOT NULL"
+      },
+      {
+        "name": "quantity",
+        "def": "numeric(15"
+      },
+      {
+        "name": "cost_price",
+        "def": "numeric(15"
+      },
+      {
+        "name": "discount",
+        "def": "numeric(15"
+      },
+      {
+        "name": "CONSTRAINT",
+        "def": "chk_po_items_cost_price_nonnegative CHECK ((cost_price >= (0)::numeric))"
+      },
+      {
+        "name": "CONSTRAINT",
+        "def": "chk_po_items_discount_nonnegative CHECK ((discount >= (0)::numeric))"
+      },
+      {
+        "name": "CONSTRAINT",
+        "def": "chk_po_items_quantity_positive CHECK ((quantity > (0)::numeric))"
+      }
+    ],
+    "fks": [
+      {
+        "column": "purchase_order_id",
+        "ref_table": "purchase_orders",
+        "ref_column": "id"
+      },
+      {
+        "column": "variant_id",
+        "ref_table": "product_variants",
+        "ref_column": "id"
+      }
+    ]
+  },
+  "purchase_orders": {
+    "columns": [
+      {
+        "name": "id",
+        "def": "uuid DEFAULT gen_random_uuid() NOT NULL"
+      },
+      {
+        "name": "store_id",
+        "def": "uuid NOT NULL"
+      },
+      {
+        "name": "supplier_id",
+        "def": "uuid"
+      },
+      {
+        "name": "staff_id",
+        "def": "uuid NOT NULL"
+      },
+      {
+        "name": "order_date",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      },
+      {
+        "name": "reference_no",
+        "def": "character varying(50)"
+      },
+      {
+        "name": "status",
+        "def": "character varying(20) DEFAULT 'draft'::character varying NOT NULL"
+      },
+      {
+        "name": "subtotal",
+        "def": "numeric(15"
+      },
+      {
+        "name": "discount_total",
+        "def": "numeric(15"
+      },
+      {
+        "name": "tax_total",
+        "def": "numeric(15"
+      },
+      {
+        "name": "grand_total",
+        "def": "numeric(15"
+      },
+      {
+        "name": "notes",
+        "def": "text"
+      },
+      {
+        "name": "created_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      },
+      {
+        "name": "updated_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      },
+      {
+        "name": "CONSTRAINT",
+        "def": "purchase_orders_status_check CHECK (((status)::text = ANY ((ARRAY['draft'::character varying"
+      }
+    ],
+    "fks": [
+      {
+        "column": "staff_id",
+        "ref_table": "staff",
+        "ref_column": "id"
+      },
+      {
+        "column": "store_id",
+        "ref_table": "stores",
+        "ref_column": "id"
+      },
+      {
+        "column": "supplier_id",
+        "ref_table": "suppliers",
+        "ref_column": "id"
+      }
+    ]
+  },
+  "registers": {
+    "columns": [
+      {
+        "name": "id",
+        "def": "uuid DEFAULT gen_random_uuid() NOT NULL"
+      },
+      {
+        "name": "store_id",
+        "def": "uuid NOT NULL"
+      },
+      {
+        "name": "name",
+        "def": "character varying(50) NOT NULL"
+      },
+      {
+        "name": "status",
+        "def": "character varying(20) DEFAULT 'closed'::character varying NOT NULL"
+      },
+      {
+        "name": "active",
+        "def": "boolean DEFAULT true NOT NULL"
+      },
+      {
+        "name": "created_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      },
+      {
+        "name": "CONSTRAINT",
+        "def": "registers_status_check CHECK (((status)::text = ANY ((ARRAY['open'::character varying"
+      }
+    ],
+    "fks": [
+      {
+        "column": "store_id",
+        "ref_table": "stores",
+        "ref_column": "id"
+      }
+    ]
+  },
+  "roles": {
+    "columns": [
+      {
+        "name": "id",
+        "def": "uuid DEFAULT gen_random_uuid() NOT NULL"
+      },
+      {
+        "name": "name",
+        "def": "character varying(50) NOT NULL"
+      },
+      {
+        "name": "permissions",
+        "def": "jsonb DEFAULT '{}'::jsonb NOT NULL"
+      },
+      {
+        "name": "created_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      }
+    ],
+    "fks": []
+  },
+  "sale_items": {
+    "columns": [
+      {
+        "name": "id",
+        "def": "uuid DEFAULT gen_random_uuid() NOT NULL"
+      },
+      {
+        "name": "sale_id",
+        "def": "uuid NOT NULL"
+      },
+      {
+        "name": "variant_id",
+        "def": "uuid NOT NULL"
+      },
+      {
+        "name": "quantity",
+        "def": "numeric(15"
+      },
+      {
+        "name": "unit_price",
+        "def": "numeric(15"
+      },
+      {
+        "name": "cost_price",
+        "def": "numeric(15"
+      },
+      {
+        "name": "discount",
+        "def": "numeric(15"
+      },
+      {
+        "name": "tax_category_id",
+        "def": "uuid NOT NULL"
+      },
+      {
+        "name": "tax_amount",
+        "def": "numeric(15"
+      },
+      {
+        "name": "CONSTRAINT",
+        "def": "chk_sale_items_cost_price_nonnegative CHECK ((cost_price >= (0)::numeric))"
+      },
+      {
+        "name": "CONSTRAINT",
+        "def": "chk_sale_items_discount_nonnegative CHECK ((discount >= (0)::numeric))"
+      },
+      {
+        "name": "CONSTRAINT",
+        "def": "chk_sale_items_quantity_positive CHECK ((quantity > (0)::numeric))"
+      },
+      {
+        "name": "CONSTRAINT",
+        "def": "chk_sale_items_tax_amount_nonnegative CHECK ((tax_amount >= (0)::numeric))"
+      },
+      {
+        "name": "CONSTRAINT",
+        "def": "chk_sale_items_unit_price_nonnegative CHECK ((unit_price >= (0)::numeric))"
+      }
+    ],
+    "fks": [
+      {
+        "column": "sale_id",
+        "ref_table": "sales",
+        "ref_column": "id"
+      },
+      {
+        "column": "tax_category_id",
+        "ref_table": "tax_categories",
+        "ref_column": "id"
+      },
+      {
+        "column": "variant_id",
+        "ref_table": "product_variants",
+        "ref_column": "id"
+      }
+    ]
+  },
+  "sale_return_items": {
+    "columns": [
+      {
+        "name": "id",
+        "def": "uuid DEFAULT gen_random_uuid() NOT NULL"
+      },
+      {
+        "name": "sale_return_id",
+        "def": "uuid NOT NULL"
+      },
+      {
+        "name": "sale_item_id",
+        "def": "uuid NOT NULL"
+      },
+      {
+        "name": "quantity",
+        "def": "numeric(15"
+      },
+      {
+        "name": "refund_amount",
+        "def": "numeric(15"
+      },
+      {
+        "name": "restock",
+        "def": "boolean DEFAULT true NOT NULL"
+      },
+      {
+        "name": "CONSTRAINT",
+        "def": "chk_return_items_quantity_positive CHECK ((quantity > (0)::numeric))"
+      },
+      {
+        "name": "CONSTRAINT",
+        "def": "chk_return_items_refund_amount_nonnegative CHECK ((refund_amount >= (0)::numeric))"
+      }
+    ],
+    "fks": [
+      {
+        "column": "sale_item_id",
+        "ref_table": "sale_items",
+        "ref_column": "id"
+      },
+      {
+        "column": "sale_return_id",
+        "ref_table": "sale_returns",
+        "ref_column": "id"
+      }
+    ]
+  },
+  "sale_returns": {
+    "columns": [
+      {
+        "name": "id",
+        "def": "uuid DEFAULT gen_random_uuid() NOT NULL"
+      },
+      {
+        "name": "sale_id",
+        "def": "uuid NOT NULL"
+      },
+      {
+        "name": "staff_id",
+        "def": "uuid NOT NULL"
+      },
+      {
+        "name": "return_date",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      },
+      {
+        "name": "total_refund",
+        "def": "numeric(15"
+      },
+      {
+        "name": "reason",
+        "def": "text"
+      },
+      {
+        "name": "created_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      }
+    ],
+    "fks": [
+      {
+        "column": "sale_id",
+        "ref_table": "sales",
+        "ref_column": "id"
+      },
+      {
+        "column": "staff_id",
+        "ref_table": "staff",
+        "ref_column": "id"
+      }
+    ]
+  },
+  "sales": {
+    "columns": [
+      {
+        "name": "id",
+        "def": "uuid DEFAULT gen_random_uuid() NOT NULL"
+      },
+      {
+        "name": "store_id",
+        "def": "uuid NOT NULL"
+      },
+      {
+        "name": "customer_id",
+        "def": "uuid"
+      },
+      {
+        "name": "staff_id",
+        "def": "uuid NOT NULL"
+      },
+      {
+        "name": "register_id",
+        "def": "uuid"
+      },
+      {
+        "name": "shift_id",
+        "def": "uuid"
+      },
+      {
+        "name": "sale_number",
+        "def": "character varying(50) NOT NULL"
+      },
+      {
+        "name": "sale_date",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      },
+      {
+        "name": "status",
+        "def": "character varying(20) DEFAULT 'completed'::character varying NOT NULL"
+      },
+      {
+        "name": "subtotal",
+        "def": "numeric(15"
+      },
+      {
+        "name": "discount_total",
+        "def": "numeric(15"
+      },
+      {
+        "name": "tax_total",
+        "def": "numeric(15"
+      },
+      {
+        "name": "service_charge_total",
+        "def": "numeric(15"
+      },
+      {
+        "name": "grand_total",
+        "def": "numeric(15"
+      },
+      {
+        "name": "payment_status",
+        "def": "character varying(20) DEFAULT 'unpaid'::character varying NOT NULL"
+      },
+      {
+        "name": "void_reason",
+        "def": "text"
+      },
+      {
+        "name": "voided_by",
+        "def": "uuid"
+      },
+      {
+        "name": "voided_at",
+        "def": "timestamp with time zone"
+      },
+      {
+        "name": "notes",
+        "def": "text"
+      },
+      {
+        "name": "created_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      },
+      {
+        "name": "updated_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      },
+      {
+        "name": "CONSTRAINT",
+        "def": "sales_payment_status_check CHECK (((payment_status)::text = ANY ((ARRAY['unpaid'::character varying"
+      },
+      {
+        "name": "CONSTRAINT",
+        "def": "sales_status_check CHECK (((status)::text = ANY ((ARRAY['held'::character varying"
+      }
+    ],
+    "fks": [
+      {
+        "column": "customer_id",
+        "ref_table": "customers",
+        "ref_column": "id"
+      },
+      {
+        "column": "register_id",
+        "ref_table": "registers",
+        "ref_column": "id"
+      },
+      {
+        "column": "shift_id",
+        "ref_table": "shifts",
+        "ref_column": "id"
+      },
+      {
+        "column": "staff_id",
+        "ref_table": "staff",
+        "ref_column": "id"
+      },
+      {
+        "column": "store_id",
+        "ref_table": "stores",
+        "ref_column": "id"
+      },
+      {
+        "column": "voided_by",
+        "ref_table": "staff",
+        "ref_column": "id"
+      }
+    ]
+  },
+  "shifts": {
+    "columns": [
+      {
+        "name": "id",
+        "def": "uuid DEFAULT gen_random_uuid() NOT NULL"
+      },
+      {
+        "name": "register_id",
+        "def": "uuid NOT NULL"
+      },
+      {
+        "name": "staff_id",
+        "def": "uuid NOT NULL"
+      },
+      {
+        "name": "opened_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      },
+      {
+        "name": "closed_at",
+        "def": "timestamp with time zone"
+      },
+      {
+        "name": "opening_cash",
+        "def": "numeric(15"
+      },
+      {
+        "name": "expected_cash",
+        "def": "numeric(15"
+      },
+      {
+        "name": "actual_cash",
+        "def": "numeric(15"
+      },
+      {
+        "name": "difference",
+        "def": "numeric(15"
+      },
+      {
+        "name": "notes",
+        "def": "text"
+      }
+    ],
+    "fks": [
+      {
+        "column": "register_id",
+        "ref_table": "registers",
+        "ref_column": "id"
+      },
+      {
+        "column": "staff_id",
+        "ref_table": "staff",
+        "ref_column": "id"
+      }
+    ]
+  },
+  "staff": {
+    "columns": [
+      {
+        "name": "id",
+        "def": "uuid DEFAULT gen_random_uuid() NOT NULL"
+      },
+      {
+        "name": "role_id",
+        "def": "uuid NOT NULL"
+      },
+      {
+        "name": "full_name",
+        "def": "character varying(100) NOT NULL"
+      },
+      {
+        "name": "email",
+        "def": "character varying(100) NOT NULL"
+      },
+      {
+        "name": "password_hash",
+        "def": "character varying(255) NOT NULL"
+      },
+      {
+        "name": "pin_hash",
+        "def": "character varying(255)"
+      },
+      {
+        "name": "remember_token",
+        "def": "character varying(100)"
+      },
+      {
+        "name": "active",
+        "def": "boolean DEFAULT true NOT NULL"
+      },
+      {
+        "name": "created_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      },
+      {
+        "name": "updated_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      }
+    ],
+    "fks": [
+      {
+        "column": "role_id",
+        "ref_table": "roles",
+        "ref_column": "id"
+      }
+    ]
+  },
+  "staff_stores": {
+    "columns": [
+      {
+        "name": "staff_id",
+        "def": "uuid NOT NULL"
+      },
+      {
+        "name": "store_id",
+        "def": "uuid NOT NULL"
+      },
+      {
+        "name": "is_primary",
+        "def": "boolean DEFAULT false NOT NULL"
+      },
+      {
+        "name": "created_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      }
+    ],
+    "fks": [
+      {
+        "column": "staff_id",
+        "ref_table": "staff",
+        "ref_column": "id"
+      },
+      {
+        "column": "store_id",
+        "ref_table": "stores",
+        "ref_column": "id"
+      }
+    ]
+  },
+  "stores": {
+    "columns": [
+      {
+        "name": "id",
+        "def": "uuid DEFAULT gen_random_uuid() NOT NULL"
+      },
+      {
+        "name": "name",
+        "def": "character varying(100) NOT NULL"
+      },
+      {
+        "name": "business_type",
+        "def": "character varying(20) DEFAULT 'retail'::character varying NOT NULL"
+      },
+      {
+        "name": "is_pkp",
+        "def": "boolean DEFAULT false NOT NULL"
+      },
+      {
+        "name": "npwp",
+        "def": "character varying(30)"
+      },
+      {
+        "name": "address",
+        "def": "text"
+      },
+      {
+        "name": "city",
+        "def": "character varying(100)"
+      },
+      {
+        "name": "province",
+        "def": "character varying(100)"
+      },
+      {
+        "name": "phone",
+        "def": "character varying(20)"
+      },
+      {
+        "name": "email",
+        "def": "character varying(100)"
+      },
+      {
+        "name": "currency",
+        "def": "character varying(10) DEFAULT 'IDR'::character varying NOT NULL"
+      },
+      {
+        "name": "timezone",
+        "def": "character varying(50) DEFAULT 'Asia/Jakarta'::character varying NOT NULL"
+      },
+      {
+        "name": "active",
+        "def": "boolean DEFAULT true NOT NULL"
+      },
+      {
+        "name": "created_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      },
+      {
+        "name": "updated_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      },
+      {
+        "name": "default_tax_category_id",
+        "def": "uuid"
+      },
+      {
+        "name": "CONSTRAINT",
+        "def": "stores_business_type_check CHECK (((business_type)::text = ANY ((ARRAY['retail'::character varying"
+      }
+    ],
+    "fks": [
+      {
+        "column": "default_tax_category_id",
+        "ref_table": "tax_categories",
+        "ref_column": "id"
+      }
+    ]
+  },
+  "suppliers": {
+    "columns": [
+      {
+        "name": "id",
+        "def": "uuid DEFAULT gen_random_uuid() NOT NULL"
+      },
+      {
+        "name": "name",
+        "def": "character varying(150) NOT NULL"
+      },
+      {
+        "name": "contact_person",
+        "def": "character varying(100)"
+      },
+      {
+        "name": "phone",
+        "def": "character varying(20)"
+      },
+      {
+        "name": "email",
+        "def": "character varying(100)"
+      },
+      {
+        "name": "address",
+        "def": "text"
+      },
+      {
+        "name": "active",
+        "def": "boolean DEFAULT true NOT NULL"
+      },
+      {
+        "name": "created_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      },
+      {
+        "name": "updated_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      }
+    ],
+    "fks": []
+  },
+  "tax_categories": {
+    "columns": [
+      {
+        "name": "id",
+        "def": "uuid DEFAULT gen_random_uuid() NOT NULL"
+      },
+      {
+        "name": "name",
+        "def": "character varying(100) NOT NULL"
+      },
+      {
+        "name": "tax_type",
+        "def": "character varying(20) NOT NULL"
+      },
+      {
+        "name": "rate",
+        "def": "numeric(5"
+      },
+      {
+        "name": "active",
+        "def": "boolean DEFAULT true NOT NULL"
+      },
+      {
+        "name": "created_at",
+        "def": "timestamp with time zone DEFAULT now() NOT NULL"
+      },
+      {
+        "name": "CONSTRAINT",
+        "def": "chk_exempt_rate CHECK ((((tax_type)::text <> 'exempt'::text) OR (rate = (0)::numeric)))"
+      },
+      {
+        "name": "CONSTRAINT",
+        "def": "chk_tax_rate_range CHECK (((rate >= (0)::numeric) AND (rate <= (100)::numeric)))"
+      },
+      {
+        "name": "CONSTRAINT",
+        "def": "tax_categories_tax_type_check CHECK (((tax_type)::text = ANY ((ARRAY['ppn'::character varying"
+      }
+    ],
+    "fks": []
+  }
+}
