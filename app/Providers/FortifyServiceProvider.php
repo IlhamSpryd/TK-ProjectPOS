@@ -39,6 +39,13 @@ class FortifyServiceProvider extends ServiceProvider
     private function configureActions(): void
     {
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
+        
+        Fortify::updateUserPasswordsUsing(function ($user, array $input) {
+            $user->forceFill([
+                'password_hash' => $input['password'],
+            ])->save();
+        });
+        
         /* @chisel-registration */
         Fortify::createUsersUsing(CreateNewUser::class);
         /* @end-chisel-registration */

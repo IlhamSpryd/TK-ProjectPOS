@@ -19,14 +19,18 @@ class PurchaseOrderItem extends Model
         'variant_id',
         'quantity',
         'cost_price',
-        'discount'
+        'discount',
+        'received_quantity',
+        'received'
     ];
 
     protected $casts = [
         'id' => 'string',
         'quantity' => 'decimal:2',
         'cost_price' => 'decimal:2',
-        'discount' => 'decimal:2'
+        'discount' => 'decimal:2',
+        'received_quantity' => 'decimal:2',
+        'received' => 'boolean'
     ];
 
     public function purchaseOrder() { return $this->belongsTo(PurchaseOrder::class); }

@@ -13,13 +13,15 @@ Dokumen ini berisi rangkuman komprehensif mengenai status proyek aplikasi Point 
 4. **Row Level Security (RLS) PostgreSQL**: Middleware khusus telah dibuat untuk memastikan kebijakan RLS pada database Supabase dapat membaca data pengguna yang sedang login (membuat data saling terisolasi dengan aman).
 5. **Manajemen Profil & Keamanan**: Pengguna (Staff) sudah dapat memperbarui nama (`full_name`), email, serta mengubah kata sandi mereka secara aman, karena sistem *hashing* sudah disesuaikan dengan kolom `password_hash`.
 6. **Penghapusan Fitur yang Tidak Kompatibel**: Fitur seperti *Passkeys*, Autentikasi 2 Langkah (2FA), dan verifikasi email bawaan telah dinonaktifkan agar tidak terjadi konflik dengan tabel `staff` yang tidak memiliki kolom-kolom tersebut.
+7. **Antarmuka Utama Kasir (POS / Checkout)**: Pembuatan UI/UX modern berbasis Tailwind CSS, menggunakan efek *glassmorphism* dan interaksi dinamis untuk grid produk serta *cart*. (Logika transaksi masih dalam pengembangan/integrasi).
+8. **Manajemen CRUD Data Master (Katalog)**: UI/UX untuk pengelolaan Produk (termasuk *form* Varian/Harga) dan Kategori telah selesai dengan desain *enterprise*.
+9. **Laporan & Analitik (Dashboard)**: UI dasbor analitik kasir yang *eye-catching* dengan *placeholder* grafik dan *stat cards*.
 
 ### ❌ Yang Belum Ada (Belum Diimplementasikan)
-1. **Antarmuka Utama Kasir (POS / Checkout)**: Halaman inti untuk memproses penjualan, menambahkan produk ke keranjang, dan mencetak struk masih belum ada.
-2. **Manajemen CRUD Data Master**: Antarmuka untuk mengelola Produk, Kategori, Pelanggan, dan Cabang (Toko).
-3. **Laporan & Analitik (Dashboard)**: Tampilan visual pendapatan harian, produk terlaris, dan histori transaksi penjualan.
-4. **Role-Based Access Control (RBAC) pada UI**: Meskipun API dan Backend aman dengan RLS, belum ada pembatasan tampilan (menu yang disembunyikan) berdasarkan peran (*role*) dari masing-masing *staff*.
-5. **Sistem Manajemen Inventaris**: Pelacakan masuk-keluarnya stok barang (`stock_movements`) melalui antarmuka web.
+1. **Logika Transaksi Kasir (Backend)**: Pemrosesan transaksi penjualan ke database, pengurangan stok otomatis, dan pencetakan struk.
+2. **Manajemen CRUD Data Lanjutan**: Pengelolaan Pelanggan dan Cabang (Toko).
+3. **Role-Based Access Control (RBAC) pada UI**: Meskipun API dan Backend aman dengan RLS, belum ada pembatasan tampilan (menu yang disembunyikan) berdasarkan peran (*role*) dari masing-masing *staff*.
+4. **Sistem Manajemen Inventaris**: Pelacakan masuk-keluarnya stok barang (`stock_movements`) melalui antarmuka web.
 
 ---
 
