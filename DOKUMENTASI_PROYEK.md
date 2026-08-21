@@ -13,15 +13,14 @@ Dokumen ini berisi rangkuman komprehensif mengenai status proyek aplikasi Point 
 4. **Row Level Security (RLS) PostgreSQL**: Middleware khusus telah dibuat untuk memastikan kebijakan RLS pada database Supabase dapat membaca data pengguna yang sedang login (membuat data saling terisolasi dengan aman).
 5. **Manajemen Profil & Keamanan**: Pengguna (Staff) sudah dapat memperbarui nama (`full_name`), email, serta mengubah kata sandi mereka secara aman, karena sistem *hashing* sudah disesuaikan dengan kolom `password_hash`.
 6. **Penghapusan Fitur yang Tidak Kompatibel**: Fitur seperti *Passkeys*, Autentikasi 2 Langkah (2FA), dan verifikasi email bawaan telah dinonaktifkan agar tidak terjadi konflik dengan tabel `staff` yang tidak memiliki kolom-kolom tersebut.
-7. **Antarmuka Utama Kasir (POS / Checkout)**: Pembuatan UI/UX modern berbasis Tailwind CSS, menggunakan efek *glassmorphism* dan interaksi dinamis untuk grid produk serta *cart*. (Logika transaksi masih dalam pengembangan/integrasi).
-8. **Manajemen CRUD Data Master (Katalog)**: UI/UX untuk pengelolaan Produk (termasuk *form* Varian/Harga) dan Kategori telah selesai dengan desain *enterprise*.
-9. **Laporan & Analitik (Dashboard)**: UI dasbor analitik kasir yang *eye-catching* dengan *placeholder* grafik dan *stat cards*.
+7. **Antarmuka Utama Kasir (POS / Checkout)**: Pembuatan UI/UX modern berbasis Tailwind CSS. Telah dioptimasi dengan pencegahan klik ganda (*double-submit*), indikator *loading*, aksesibilitas *keyboard* yang baik, serta perbaikan performa *N+1 query* menggunakan *Eager Loading* dan *Pagination*.
+8. **Manajemen CRUD Data Master (Katalog)**: UI/UX untuk pengelolaan Produk dan Kategori telah selesai dengan desain *enterprise*, dan dilengkapi dengan validasi pesan error secara *inline* langsung di bawah kolom isian.
+9. **Laporan & Analitik (Dashboard)**: UI dasbor kasir yang terintegrasi penuh dengan komponen Livewire untuk menyajikan data metrik secara *real-time* (pendapatan, jumlah order, produk aktif).
 
 ### ❌ Yang Belum Ada (Belum Diimplementasikan)
-1. **Logika Transaksi Kasir (Backend)**: Pemrosesan transaksi penjualan ke database, pengurangan stok otomatis, dan pencetakan struk.
-2. **Manajemen CRUD Data Lanjutan**: Pengelolaan Pelanggan dan Cabang (Toko).
-3. **Role-Based Access Control (RBAC) pada UI**: Meskipun API dan Backend aman dengan RLS, belum ada pembatasan tampilan (menu yang disembunyikan) berdasarkan peran (*role*) dari masing-masing *staff*.
-4. **Sistem Manajemen Inventaris**: Pelacakan masuk-keluarnya stok barang (`stock_movements`) melalui antarmuka web.
+1. **Manajemen CRUD Data Lanjutan**: Pengelolaan Pelanggan dan Cabang (Toko).
+2. **Role-Based Access Control (RBAC) pada UI**: Meskipun API dan Backend aman dengan RLS, belum ada pembatasan tampilan (menu yang disembunyikan) berdasarkan peran (*role*) dari masing-masing *staff*.
+3. **Sistem Manajemen Inventaris**: Pelacakan masuk-keluarnya stok barang (`stock_movements`) melalui antarmuka web.
 
 ---
 
@@ -31,13 +30,19 @@ Dokumen ini berisi rangkuman komprehensif mengenai status proyek aplikasi Point 
 |-------------|------------------|
 | `app/Models/Staff.php` | Model untuk tabel `staff`. Berkas ini sangat vital karena digunakan sebagai model Autentikasi. Di sini kita mendeklarasikan bahwa *password* menggunakan kolom `password_hash`. |
 | `app/Models/*.php` | Kumpulan 21 model lainnya (seperti `Product.php`, `Sale.php`). Dibuat menggunakan _script_ generator Python agar otomatis menggunakan UUID dan tidak *incrementing*. |
+| `app/Models/ProductVariant.php` | Diperbarui dengan menambahkan fungsi relasi `stocks()` ke entitas `InventoryStock` agar *Eager Loading* di POS berjalan tanpa *error relation not found*. |
 | `app/Http/Middleware/SetStaffContext.php` | Middleware keamanan yang memasukkan ID *staff* yang sedang *login* ke variabel _session_ di PostgreSQL. Sangat penting untuk fitur RLS Supabase. |
 | `config/auth.php` | Konfigurasi autentikasi telah diubah agar default _guard_ `web` menggunakan *provider* yang mengarah ke model `Staff` (bukan `User`). |
 | `config/fortify.php` | Pengaturan *backend* autentikasi Laravel. Telah diedit untuk mematikan fitur 2FA, registrasi, dan Passkey. |
+| `app/Livewire/Dashboard.php` | Komponen utama untuk dasbor, mengambil agregasi data penjualan dan status inventori toko secara *real-time* ke tampilan dasbor kasir. |
+| `app/Livewire/PosScreen.php` | Komponen utama layar kasir. Diperbarui untuk menggunakan metode `paginate(24)` serta *eager-loading* untuk menangani isu kebocoran memori (N+1 query) pada *listing* katalog produk. |
 | `app/Livewire/Settings/Profile.php` | Pengontrol antarmuka halaman Profil. Telah disesuaikan untuk menggunakan nama variabel `full_name` dan menonaktifkan kode verifikasi email. |
 | `app/Livewire/Settings/Security.php` | Pengontrol antarmuka untuk mengganti kata sandi. Diperbarui untuk menggunakan kolom `password_hash`. |
 | `app/Concerns/ProfileValidationRules.php` | (*Trait*) Aturan validasi profil. Diperbarui untuk menggunakan model `Staff` agar sistem tahu tabel mana yang harus dicek saat validasi email unik. |
-| `routes/web.php` | Aturan rute aplikasi. Diubah agar *root url* (`/`) langsung dialihkan (redirect) ke `/dashboard` atau halaman _login_. |
+| `routes/web.php` | Aturan rute aplikasi. Diubah agar rute `/dashboard` terikat langsung ke komponen Livewire baru. |
+| `resources/views/dashboard.blade.php` | Diperbarui dengan menghapus bungkus *hardcoded layout* dan mengganti variabel statis menjadi data *real-time* dari backend Livewire. |
+| `resources/views/livewire/pos-screen.blade.php` | Perombakan UI untuk memenuhi standar aksesibilitas (ubah `div` menjadi `button`), penambahan indikator pencarian (*spinner*), dan fitur proteksi pencegahan klik-ganda (*double submit*). |
+| `resources/views/livewire/catalog/*-form.blade.php` | Diperbarui untuk menambahkan dukungan `<flux:error>` (pesan error sebaris) secara langsung tanpa perantara _toast modal_. Juga telah dioptimalkan agar tidak membangkitkan *component missing exception*. |
 | `resources/views/livewire/auth/*` | Template antarmuka autentikasi. Diperbarui untuk menghapus/menyembunyikan render tombol Passkeys. |
 
 ---

@@ -1,96 +1,82 @@
-<div class="max-w-7xl mx-auto py-6">
+<div class="py-6">
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-            <flux:heading size="xl" class="text-zinc-900 dark:text-white font-black tracking-tight">Kategori Produk</flux:heading>
-            <flux:subheading class="text-zinc-500 dark:text-zinc-400 mt-1">Kelola daftar kategori untuk mengelompokkan produk Anda.</flux:subheading>
+            <h1 class="text-h2 font-black text-neutral-900 tracking-tight">Kategori Produk</h1>
+            <p class="text-body text-neutral-500 mt-1">Kelola daftar kategori untuk mengelompokkan produk Anda.</p>
         </div>
         <div>
-            <flux:button variant="primary" icon="plus" wire:click="$dispatch('editCategory')" class="rounded-xl shadow-lg shadow-blue-500/20 font-semibold px-5">
+            <x-ui.button variant="primary" icon="plus" wire:click="$dispatch('editCategory')">
                 Tambah Kategori
-            </flux:button>
+            </x-ui.button>
         </div>
     </div>
 
-    <div class="bg-white dark:bg-zinc-900 rounded-3xl shadow-sm border border-zinc-100 dark:border-zinc-800 overflow-hidden">
-        <div class="p-6 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/50">
+    <x-ui.card class="p-0 overflow-hidden border-neutral-200">
+        <div class="p-4 border-b border-neutral-200 bg-neutral-50/50">
             <div class="flex items-center w-full max-w-md">
-                <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Cari nama kategori..." class="w-full bg-white dark:bg-zinc-900 shadow-sm" />
+                <x-ui.input name="search" wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Cari nama kategori..." class="w-full bg-white shadow-none" />
             </div>
         </div>
 
-        <div class="p-0">
-            <flux:table class="w-full">
-                <flux:table.columns>
-                    <flux:table.column class="pl-6 text-zinc-500">Nama Kategori</flux:table.column>
-                    <flux:table.column class="text-zinc-500">Status</flux:table.column>
-                    <flux:table.column class="text-zinc-500">Aksi</flux:table.column>
-                </flux:table.columns>
-
-                <flux:table.rows>
-                    @forelse ($categories as $category)
-                        <flux:table.row :key="$category->id" class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition-colors">
-                            <flux:table.cell class="pl-6">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500">
-                                        <flux:icon.tag class="w-5 h-5" />
-                                    </div>
-                                    <span class="font-bold text-zinc-900 dark:text-zinc-100">{{ $category->name }}</span>
-                                </div>
-                            </flux:table.cell>
-                            <flux:table.cell>
-                                @if($category->active)
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
-                                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                                        Aktif
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
-                                        <div class="w-1.5 h-1.5 rounded-full bg-zinc-400"></div>
-                                        Nonaktif
-                                    </span>
-                                @endif
-                            </flux:table.cell>
-                            <flux:table.cell>
-                                <div class="flex items-center gap-2">
-                                    <flux:button size="sm" variant="ghost" icon="pencil-square" class="text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400" wire:click="$dispatch('editCategory', { id: '{{ $category->id }}' })" />
-                                    <flux:button size="sm" variant="ghost" icon="trash" class="text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400" wire:click="deleteCategory('{{ $category->id }}')" wire:confirm="Yakin ingin menghapus kategori ini?" />
-                                </div>
-                            </flux:table.cell>
-                        </flux:table.row>
-                    @empty
-                        <flux:table.row>
-                            <flux:table.cell colspan="3" class="text-center text-zinc-400 py-12">
-                                <div class="flex flex-col items-center justify-center space-y-3">
-                                    <div class="w-16 h-16 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
-                                        <flux:icon.tag class="w-8 h-8 text-zinc-400" />
-                                    </div>
-                                    <p class="font-medium text-zinc-500">Tidak ada kategori ditemukan.</p>
-                                </div>
-                            </flux:table.cell>
-                        </flux:table.row>
-                    @endforelse
-                </flux:table.rows>
-            </flux:table>
-        </div>
-
-        @if($categories->hasPages())
-        <div class="p-6 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/50">
-            {{ $categories->links() }}
-        </div>
-        @endif
-    </div>
+        <x-ui.table>
+            <x-slot:head>
+                <x-ui.table.th class="pl-6">Nama Kategori</x-ui.table.th>
+                <x-ui.table.th>Status</x-ui.table.th>
+                <x-ui.table.th class="text-right pr-6">Aksi</x-ui.table.th>
+            </x-slot:head>
+            
+            @forelse ($categories as $category)
+                <x-ui.table.tr :key="$category->id">
+                    <x-ui.table.td class="pl-6">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-neutral-100 flex items-center justify-center text-neutral-500 border border-neutral-200">
+                                <flux:icon.tag class="w-5 h-5" />
+                            </div>
+                            <span class="text-body font-bold text-neutral-900">{{ $category->name }}</span>
+                        </div>
+                    </x-ui.table.td>
+                    <x-ui.table.td>
+                        @if($category->active)
+                            <x-ui.badge variant="success">Aktif</x-ui.badge>
+                        @else
+                            <x-ui.badge variant="neutral">Nonaktif</x-ui.badge>
+                        @endif
+                    </x-ui.table.td>
+                    <x-ui.table.td class="text-right pr-6">
+                        <div class="flex items-center justify-end gap-2">
+                            <x-ui.button size="sm" variant="ghost" icon="pencil-square" wire:click="$dispatch('editCategory', { id: '{{ $category->id }}' })" class="text-neutral-500 hover:text-primary-600" />
+                            <x-ui.button size="sm" variant="ghost" icon="trash" wire:click="deleteCategory('{{ $category->id }}')" wire:confirm="Yakin ingin menghapus kategori ini?" class="text-neutral-500 hover:text-danger-600 hover:bg-danger-50" />
+                        </div>
+                    </x-ui.table.td>
+                </x-ui.table.tr>
+            @empty
+                <x-slot:empty>
+                    <div class="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center mb-3 border border-neutral-200 mx-auto">
+                        <flux:icon.tag class="w-8 h-8 text-neutral-400" />
+                    </div>
+                    <p class="font-medium text-neutral-500">Tidak ada kategori ditemukan.</p>
+                </x-slot:empty>
+            @endforelse
+            
+            @if($categories->hasPages())
+                <x-slot:pagination>
+                    {{ $categories->links() }}
+                </x-slot:pagination>
+            @endif
+        </x-ui.table>
+    </x-ui.card>
     
-    <flux:modal name="category-modal" class="md:w-[500px]">
+    <x-ui.modal name="category-modal" maxWidth="md">
         @livewire('catalog.category-form')
-    </flux:modal>
+    </x-ui.modal>
     
     <script>
         document.addEventListener('livewire:initialized', () => {
             Livewire.on('open-category-modal', (event) => {
-                Flux.modals.show('category-modal');
+                window.dispatchEvent(new CustomEvent('open-modal', { detail: 'category-modal' }));
             });
             Livewire.on('close-category-modal', (event) => {
-                Flux.modals.close('category-modal');
+                window.dispatchEvent(new CustomEvent('close-modal', { detail: 'category-modal' }));
             });
         });
     </script>

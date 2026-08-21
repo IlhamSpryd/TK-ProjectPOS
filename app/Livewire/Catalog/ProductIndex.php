@@ -34,7 +34,7 @@ class ProductIndex extends Component
 
     public function render()
     {
-        $products = Product::with('category')
+        $products = Product::with(['category', 'variants'])
             ->where('name', 'ilike', '%' . $this->search . '%')
             ->orderBy('name')
             ->paginate(10);

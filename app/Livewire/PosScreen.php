@@ -9,9 +9,12 @@ use App\Models\Sale;
 use App\Services\SaleService;
 use Exception;
 use Illuminate\Support\Facades\Auth;
+use Livewire\WithPagination;
 
 class PosScreen extends Component
 {
+    use WithPagination;
+
     public string $search = '';
     public array $cart = [];
     public ?string $customer_id = null;
@@ -242,7 +245,15 @@ class PosScreen extends Component
 
     public function render()
     {
-        $productsQuery = ProductVariant::with('product')
+        $staff = Auth::user();
+        $store = $this->getActiveStore($staff);
+        $storeId = $store ? $store->id : null;
+
+        $productsQuery = ProductVariant::with(['product', 'stocks' => function($q) use ($storeId) {
+                if ($storeId) {
+                    $q->where('store_id', $storeId);
+                }
+            }])
             ->where('active', true)
             ->whereHas('product', function ($q) {
                 $q->where('active', true)
@@ -259,10 +270,12 @@ class PosScreen extends Component
             });
         }
 
-        $products = $productsQuery->limit(24)->get();
+        $products = $productsQuery->paginate(24);
+        $categories = \App\Models\Category::where('active', true)->get();
 
         return view('livewire.pos-screen', [
             'products' => $products,
+            'categories' => $categories,
         ])->layout('layouts.app');
     }
 }
