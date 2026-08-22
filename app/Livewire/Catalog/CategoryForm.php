@@ -86,3 +86,4 @@ class CategoryForm extends Component
         ]);
     }
 }
+

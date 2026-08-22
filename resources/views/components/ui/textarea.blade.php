@@ -29,7 +29,7 @@
             id="{{ $name }}" 
             rows="{{ $rows }}"
             {{ $attributes->merge([
-                'class' => "block w-full px-3.5 py-2.5 bg-white rounded-lg border $borderClass text-body text-neutral-900 placeholder-neutral-400 focus:outline-hidden focus:ring-2 transition-shadow disabled:bg-neutral-50 disabled:text-neutral-500 disabled:border-neutral-200"
+                'class' => "block w-full px-3 py-2 bg-white rounded-md border $borderClass shadow-sm text-body-sm text-neutral-900 placeholder-neutral-400 focus:outline-hidden focus:ring-2 transition-shadow disabled:bg-neutral-50 disabled:text-neutral-500 disabled:border-neutral-200"
             ]) }}
         ></textarea>
     </div>

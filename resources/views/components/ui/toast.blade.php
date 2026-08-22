@@ -33,8 +33,9 @@ $iconColor = match($type) {
     x-transition:enter-end="opacity-100 translate-x-0"
     x-transition:leave="transition ease-in duration-200"
     x-transition:leave-start="opacity-100 translate-x-0"
+    x-transition:leave-start="opacity-100 translate-x-0"
     x-transition:leave-end="opacity-0 translate-x-8"
-    class="pointer-events-auto w-full max-w-sm overflow-hidden rounded-lg bg-white shadow-md border-l-4 {{ $borderClass }} relative mb-3"
+    class="pointer-events-auto w-full max-w-sm overflow-hidden rounded-lg bg-white shadow-sm border border-neutral-200 border-l-4 {{ $borderClass }} relative mb-3 z-50"
 >
     <div class="p-4">
         <div class="flex items-start">

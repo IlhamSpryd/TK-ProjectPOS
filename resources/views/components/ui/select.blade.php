@@ -27,7 +27,7 @@
             name="{{ $name }}" 
             id="{{ $name }}" 
             {{ $attributes->merge([
-                'class' => "block w-full h-10 pl-3.5 pr-10 py-0 bg-white rounded-lg border $borderClass text-body text-neutral-900 focus:outline-hidden focus:ring-2 transition-shadow disabled:bg-neutral-50 disabled:text-neutral-500 disabled:border-neutral-200 appearance-none"
+                'class' => "block w-full h-9 pl-3 pr-10 py-0 bg-white rounded-md border $borderClass shadow-sm text-body-sm text-neutral-900 focus:outline-hidden focus:ring-2 transition-shadow disabled:bg-neutral-50 disabled:text-neutral-500 disabled:border-neutral-200 appearance-none"
             ]) }}
         >
             {{ $slot }}

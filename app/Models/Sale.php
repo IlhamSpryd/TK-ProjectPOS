@@ -52,4 +52,8 @@ class Sale extends Model
     public function shift() { return $this->belongsTo(Shift::class); }
     public function items() { return $this->hasMany(SaleItem::class); }
     public function payments() { return $this->hasMany(Payment::class); }
+    public function discounts() { return $this->hasMany(SaleDiscount::class); }
+    public function returns() { return $this->hasMany(SaleReturn::class); }
+    public function loyaltyLedger() { return $this->hasMany(LoyaltyLedger::class); }
 }
+

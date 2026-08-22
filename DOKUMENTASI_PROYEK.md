@@ -28,10 +28,11 @@ Dokumen ini berisi rangkuman komprehensif mengenai status proyek aplikasi Point 
 - **Penghapusan Dependensi Flux**: Menghapus penggunaan direktif `@fluxStyles` dan komponen UI Flux (`<flux:switch>`, `<flux:icon>`) karena tidak ter-*render* dengan benar dan menyebabkan komponen patah/hilang. Digantikan dengan input form standar berpadu Tailwind CSS agar lebih ringan dan konsisten.
 - **Sinkronisasi Backend & Frontend**: Telah dipastikan tidak ada miskomunikasi antara form blade (Frontend) dan Livewire Model (Backend). Seluruh input (`wire:model`) dari Form Staff, Cabang, Pelanggan, dan Kategori terhubung sempurna.
 - **Optimalisasi Sidebar & Layout**: Mengurangi *padding* dan ukuran *font* pada Sidebar agar muat dalam satu layar tanpa *scroll*, serta membersihkan duplikasi SVG.
+- **Pembersihan Root Direktori**: Skrip Python (`extract_schema.py`, dll.) serta file skema `*.sql`/`*.json` telah dipindahkan ke folder `scripts/` untuk menjaga kebersihan root direktori proyek. File sementara seperti `temp_pos.blade.php` telah dihapus.
 
 ---
 
-## 2. Berkas yang Dibuat / Diubah Beserta Kegunaannya
+## 3. Berkas yang Dibuat / Diubah Beserta Kegunaannya
 
 | Nama Berkas | Kegunaan / Peran |
 |-------------|------------------|
@@ -51,10 +52,11 @@ Dokumen ini berisi rangkuman komprehensif mengenai status proyek aplikasi Point 
 | `resources/views/livewire/pos-screen.blade.php` | Perombakan UI untuk memenuhi standar aksesibilitas (ubah `div` menjadi `button`), penambahan indikator pencarian (*spinner*), dan fitur proteksi pencegahan klik-ganda (*double submit*). |
 | `resources/views/livewire/catalog/*-form.blade.php` | Diperbarui untuk menambahkan dukungan `<flux:error>` (pesan error sebaris) secara langsung tanpa perantara _toast modal_. Juga telah dioptimalkan agar tidak membangkitkan *component missing exception*. |
 | `resources/views/livewire/auth/*` | Template antarmuka autentikasi. Diperbarui untuk menghapus/menyembunyikan render tombol Passkeys. |
+| `scripts/*` | Folder baru yang berisi skrip utilitas (Python) untuk *generate* model dan *dump* skema database (`schema_dump.sql`, `schema_summary.json`). Dipindahkan dari root agar lebih rapi. |
 
 ---
 
-## 3. Kode-Kode Penting dan Fungsinya Secara Detail
+## 4. Kode-Kode Penting dan Fungsinya Secara Detail
 
 ### A. Konteks Keamanan RLS (Row Level Security)
 **Berkas:** `app/Http/Middleware/SetStaffContext.php`

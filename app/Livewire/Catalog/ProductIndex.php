@@ -39,8 +39,16 @@ class ProductIndex extends Component
             ->orderBy('name')
             ->paginate(10);
 
-        return view('livewire.catalog.product-index', [
-            'products' => $products
-        ])->layout('layouts.app');
+        return view('livewire.catalog.product-index', compact('products'))
+            ->layout('components.layouts.app', [
+                'title' => 'Katalog Produk',
+                'breadcrumbs' => [
+                    ['label' => 'Dashboard', 'route' => route('dashboard')],
+                    ['label' => 'Katalog Produk']
+                ],
+                'actions' => new \Illuminate\Support\HtmlString(\Illuminate\Support\Facades\Blade::render(
+                    '<x-ui.button variant="primary" icon="plus" href="{{ route(\'catalog.products.create\') }}" wire:navigate>Tambah Produk</x-ui.button>'
+                ))
+            ]);
     }
 }
