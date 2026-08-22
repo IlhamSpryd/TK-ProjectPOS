@@ -42,6 +42,16 @@ class CategoryIndex extends Component
 
         return view('livewire.catalog.category-index', [
             'categories' => $categories
+        ])->layout('components.layouts.app', [
+            'title' => 'Kategori Produk',
+            'breadcrumbs' => [
+                ['label' => 'Dashboard', 'route' => route('dashboard')],
+                ['label' => 'Katalog Produk', 'route' => route('catalog.products')],
+                ['label' => 'Kategori']
+            ],
+            'actions' => new \Illuminate\Support\HtmlString(\Illuminate\Support\Facades\Blade::render(
+                '<x-ui.button variant="primary" icon="plus" wire:click="$dispatch(\'editCategory\')">Tambah Kategori</x-ui.button>'
+            ))
         ]);
     }
 }

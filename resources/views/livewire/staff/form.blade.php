@@ -1,18 +1,4 @@
-<x-layouts.app :title="$staffId ? 'Edit Staff' : 'Tambah Staff Baru'" :breadcrumbs="[['label' => 'Dashboard', 'route' => route('dashboard')], ['label' => 'Staff', 'route' => route('staff.index')], ['label' => $staffId ? 'Edit' : 'Tambah']]">
 <div class="py-6">
-    <x-slot:actions>
-        <x-ui.button variant="ghost" href="{{ route('staff.index') }}" wire:navigate class="px-5">Batal</x-ui.button>
-        <x-ui.button variant="primary" wire:click="save" wire:loading.attr="disabled" wire:target="save">
-            <span wire:loading.remove wire:target="save">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 -ml-1"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                Simpan Akun
-            </span>
-            <span wire:loading wire:target="save" class="flex items-center">
-                <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                Menyimpan...
-            </span>
-        </x-ui.button>
-    </x-slot:actions>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 space-y-6">
@@ -144,5 +130,3 @@
         </div>
     </div>
 </div>
-</x-layouts.app>
-

@@ -40,6 +40,15 @@ class Index extends Component
 
         return view('livewire.customers.index', [
             'customers' => $customers
+        ])->layout('components.layouts.app', [
+            'title' => 'Pelanggan',
+            'breadcrumbs' => [
+                ['label' => 'Dashboard', 'route' => route('dashboard')],
+                ['label' => 'Pelanggan']
+            ],
+            'actions' => new \Illuminate\Support\HtmlString(\Illuminate\Support\Facades\Blade::render(
+                '<x-ui.button variant="primary" icon="plus" wire:click="$dispatch(\'open-customer-modal\')">Tambah Pelanggan</x-ui.button>'
+            ))
         ]);
     }
 }

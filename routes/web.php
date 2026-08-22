@@ -19,11 +19,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/inventori/pergerakan/tambah', \App\Livewire\Inventory\MovementForm::class)->middleware('permission:manage_inventory')->name('inventory.movements.create');
 
     // Manajemen
-    Route::get('/pelanggan', \App\Livewire\Customers\CustomerIndex::class)->middleware('permission:manage_customers')->name('customers');
-    Route::get('/cabang', \App\Livewire\Stores\StoreIndex::class)->middleware('permission:manage_stores')->name('stores');
-    Route::get('/staff', \App\Livewire\Staff\StaffIndex::class)->middleware('permission:manage_staff')->name('staff.index');
-    Route::get('/staff/tambah', \App\Livewire\Staff\StaffForm::class)->middleware('permission:manage_staff')->name('staff.create');
-    Route::get('/laporan', \App\Livewire\Reports\ReportDashboard::class)->middleware('permission:view_reports')->name('reports');
+    Route::get('/pelanggan', \App\Livewire\Customers\Index::class)->middleware('permission:manage_customers')->name('customers');
+    Route::get('/cabang', \App\Livewire\Stores\Index::class)->middleware('permission:manage_stores')->name('stores');
+    Route::get('/staff', \App\Livewire\Staff\Index::class)->middleware('permission:manage_staff')->name('staff.index');
+    Route::get('/staff/tambah', \App\Livewire\Staff\Form::class)->middleware('permission:manage_staff')->name('staff.create');
+    Route::get('/staff/{id}/edit', \App\Livewire\Staff\Form::class)->middleware('permission:manage_staff')->name('staff.edit');
+    Route::get('/laporan', \App\Livewire\Reports\Index::class)->middleware('permission:view_reports')->name('reports');
 });
 
 require __DIR__.'/settings.php';

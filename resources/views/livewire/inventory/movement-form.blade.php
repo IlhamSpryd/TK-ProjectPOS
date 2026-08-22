@@ -1,10 +1,4 @@
-<x-layouts.app title="Tambah Pergerakan" :breadcrumbs="[['label' => 'Dashboard', 'route' => route('dashboard')], ['label' => 'Pergerakan Stok']]">
 <div class="py-6 max-w-2xl mx-auto">
-    <x-slot:actions>
-        <x-ui.button variant="ghost" icon="arrow-left" href="{{ route('inventory.movements') }}" wire:navigate>
-            Kembali
-        </x-ui.button>
-    </x-slot:actions>
 
     <x-ui.card class="mt-6">
         <form wire:submit.prevent="save" class="space-y-6">
@@ -48,5 +42,3 @@
         </form>
     </x-ui.card>
 </div>
-</x-layouts.app>
-

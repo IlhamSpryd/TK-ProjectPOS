@@ -1,13 +1,4 @@
-<x-layouts.app title="Dashboard" :breadcrumbs="[
-    ['label' => 'Dashboard']
-]">
-    <x-slot:actions>
-        <x-ui.button variant="primary" icon="calculator" href="{{ route('pos') }}" wire:navigate>
-            Buka Kasir
-        </x-ui.button>
-    </x-slot:actions>
-
-    <div class="flex h-full w-full flex-1 flex-col gap-6">
+<div class="flex h-full w-full flex-1 flex-col gap-6">
         <!-- Header -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -202,5 +193,4 @@
                 </div>
             </x-ui.card>
         </div>
-    </div>
-</x-layouts.app>
+</div>

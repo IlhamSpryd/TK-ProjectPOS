@@ -277,7 +277,18 @@ class Security extends Component
     {
         $disableTwoFactorAuthentication(auth()->user());
 
-        $this->twoFactorEnabled = false;
+        return redirect()->to('/', absolute: false);
+    }
+
+    public function render()
+    {
+        return view('livewire.settings.security')->layout('components.layouts.app', [
+            'title' => 'Pengaturan Keamanan',
+            'breadcrumbs' => [
+                ['label' => 'Dashboard', 'route' => route('dashboard')],
+                ['label' => 'Pengaturan']
+            ]
+        ]);
     }
 
     /**

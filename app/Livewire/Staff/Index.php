@@ -51,6 +51,15 @@ class Index extends Component
 
         return view('livewire.staff.index', [
             'staffMembers' => $staffMembers,
+        ])->layout('components.layouts.app', [
+            'title' => 'Manajemen Staff',
+            'breadcrumbs' => [
+                ['label' => 'Dashboard', 'route' => route('dashboard')],
+                ['label' => 'Staff']
+            ],
+            'actions' => new \Illuminate\Support\HtmlString(\Illuminate\Support\Facades\Blade::render(
+                '<x-ui.button variant="primary" icon="plus" href="{{ route(\'staff.create\') }}" wire:navigate>Tambah Staff</x-ui.button>'
+            ))
         ]);
     }
 }

@@ -11,7 +11,7 @@ return new class extends Migration
     public function up(): void
     {
         if (DB::connection()->getDriverName() === 'pgsql') {
-            DB::unprepared('
+            DB::connection('pgsql_admin')->unprepared('
                 DROP TRIGGER IF EXISTS trg_recalc_sale_totals ON public.sale_items;
                 CREATE TRIGGER trg_recalc_sale_totals 
                 AFTER DELETE OR UPDATE ON public.sale_items 
@@ -27,7 +27,7 @@ return new class extends Migration
     public function down(): void
     {
         if (DB::connection()->getDriverName() === 'pgsql') {
-            DB::unprepared('
+            DB::connection('pgsql_admin')->unprepared('
                 DROP TRIGGER IF EXISTS trg_recalc_sale_totals ON public.sale_items;
                 CREATE TRIGGER trg_recalc_sale_totals 
                 AFTER INSERT OR DELETE OR UPDATE ON public.sale_items 

@@ -40,6 +40,12 @@ class Index extends Component
 
         return view('livewire.stores.index', [
             'stores' => $stores
+        ])->layout('components.layouts.app', [
+            'title' => 'Cabang',
+            'breadcrumbs' => [
+                ['label' => 'Dashboard', 'route' => route('dashboard')],
+                ['label' => 'Cabang']
+            ]
         ]);
     }
 }

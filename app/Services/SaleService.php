@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Payment;
-use App\Models\InventoryMovement;
 use App\Models\Discount;
 use App\Models\InventoryStock;
 use App\Models\ProductVariant;
@@ -17,6 +16,21 @@ use Illuminate\Support\Str;
 use Exception;
 use InvalidArgumentException;
 use Carbon\Carbon;
+
+// ┌─────────────────────────────────────────────────────────────────────────────┐
+// │  ARSITEKTUR STOK — PENTING, BACA SEBELUM MODIFIKASI                        │
+// │                                                                             │
+// │  Pengurangan stok dan pencatatan inventory_movements dilakukan              │
+// │  SEPENUHNYA oleh DB trigger: trg_decrement_stock_on_sale_item               │
+// │  (lihat migration: 2026_08_22_132309_add_business_logic_triggers_pos.php)   │
+// │                                                                             │
+// │  SaleService hanya boleh:                                                   │
+// │    1. Memvalidasi stok SEBELUM INSERT (guard di sisi PHP untuk UX error)    │
+// │    2. Melakukan INSERT ke sale_items (yang memicu trigger)                  │
+// │                                                                             │
+// │  JANGAN tambahkan $stock->decrement() atau InventoryMovement::insert()      │
+// │  di sini — itu akan menyebabkan stok berkurang DUA KALI per transaksi.      │
+// └─────────────────────────────────────────────────────────────────────────────┘
 
 class SaleService
 {
@@ -42,12 +56,12 @@ class SaleService
         }
 
         return DB::transaction(function () use ($data, $staff, $store, $items) {
-            $subtotal = 0;
+            $subtotal      = 0;
             $discountTotal = 0;
-            $taxTotal = 0;
+            $taxTotal      = 0;
             
-            $saleItemsData = [];
-            $inventoryMovementsData = [];
+            $saleItemsData    = [];
+            $saleDiscountsData = []; // Priority 4: pelacak diskon per transaksi
 
             // 1. Preload semua variant
             $variantIds = array_keys($items);
@@ -56,10 +70,12 @@ class SaleService
                 ->get()
                 ->keyBy('id');
 
-            // 2. Preload semua stok sekaligus dengan lock, urutkan by id (hindari deadlock)
+            // 2. Preload semua stok untuk VALIDASI (bukan untuk decrement — itu tugas trigger DB).
+            //    lockForUpdate dipakai agar transaksi konkuren mengantre dan membaca nilai stok
+            //    yang sudah dicommit oleh transaksi sebelumnya, bukan nilai stale.
             $stocks = InventoryStock::where('store_id', $store->id)
                 ->whereIn('variant_id', $variantIds)
-                ->orderBy('variant_id')
+                ->orderBy('variant_id') // urutan konsisten → cegah deadlock
                 ->lockForUpdate()
                 ->get()
                 ->keyBy('variant_id');
@@ -102,15 +118,17 @@ class SaleService
                     $discount = min(floatval($itemData['discount']), $unitPrice * $quantity);
                 }
 
-                // Validasi Stok (dengan Row Lock yang sudah didapat di atas)
+                // Guard validasi stok (sisi PHP) — memberikan pesan error yang jelas ke kasir
+                // SEBELUM trigger DB dijalankan. Trigger sendiri juga memvalidasi (defense-in-depth).
                 $stock = $stocks->get($variantId);
                     
                 if (!$stock || $stock->quantity < $quantity) {
-                    throw new Exception("Stok tidak mencukupi untuk: " . $variant->product->name);
+                    throw new Exception("Stok tidak mencukupi untuk: " . $variant->product->name . " (tersedia: " . ($stock?->quantity ?? 0) . ")");
                 }
 
-                // Kurangi stok langsung untuk menghindari race condition
-                $stock->decrement('quantity', $quantity);
+                // ⚠️  JANGAN tambahkan $stock->decrement() di sini.
+                //     Pengurangan stok dilakukan OTOMATIS oleh trigger DB:
+                //     trg_decrement_stock_on_sale_item (AFTER INSERT ON sale_items)
 
                 // Tentukan Tax Category
                 $taxCategoryId = $variant->product->tax_category_id ?? $store->default_tax_category_id;
@@ -137,34 +155,44 @@ class SaleService
                 $saleItemId = Str::uuid()->toString();
 
                 $saleItemsData[] = [
-                    'id' => $saleItemId,
-                    'variant_id' => $variantId,
-                    'quantity' => $quantity,
-                    'unit_price' => $unitPrice,
-                    'cost_price' => $variant->cost_price,
-                    'discount' => $discount,
+                    'id'              => $saleItemId,
+                    'variant_id'      => $variantId,
+                    'quantity'        => $quantity,
+                    'unit_price'      => $unitPrice,
+                    'cost_price'      => $variant->cost_price,
+                    'discount'        => $discount,
                     'tax_category_id' => $taxCategoryId,
-                    'tax_amount' => $taxAmount,
+                    'tax_amount'      => $taxAmount,
                 ];
+                // ⚠️  JANGAN tambahkan inventory_movements insert di sini.
+                //     Trigger trg_decrement_stock_on_sale_item sudah insert ke inventory_movements
+                //     secara atomik setelah baris sale_items di atas diinsert.
 
-                // Siapkan InventoryMovement
-                $inventoryMovementsData[] = [
-                    'id' => Str::uuid()->toString(),
-                    'variant_id' => $variantId,
-                    'store_id' => $store->id,
-                    'movement_type' => 'sale',
-                    'quantity_change' => -$quantity, // Negative untuk pengurangan stok
-                    'reference_table' => 'sale_items',
-                    'reference_id' => $saleItemId,
-                    'staff_id' => $staff->id,
-                    'note' => 'Penjualan'
-                ];
+                // Kumpulkan data diskon untuk di-insert ke sale_discounts (Priority 4)
+                if ($discount > 0) {
+                    $discountRecord = !empty($itemData['discount_id'])
+                        ? $discounts->get($itemData['discount_id'])
+                        : null;
+
+                    $saleDiscountsData[] = [
+                        'sale_id'       => null, // akan diisi setelah sale_id diketahui
+                        'discount_id'   => $discountRecord?->id,
+                        'label'         => $discountRecord?->name ?? 'Diskon Manual',
+                        'discount_type' => $discountRecord?->type ?? 'fixed',
+                        'value'         => $discountRecord?->value ?? $discount,
+                        'amount_applied'=> $discount,
+                    ];
+                }
             }
 
             $grandTotal = $subtotal - $discountTotal + $taxTotal;
             
             $saleId = Str::uuid()->toString();
-            $saleNumber = $this->generateSaleNumber($store->id);
+
+            // Priority 6: Nomor transaksi berbasis sequence DB (anti-collision)
+            // fn_next_sale_number() menggunakan INSERT ... ON CONFLICT DO UPDATE
+            // yang bersifat atomik, menggantikan Str::random(4) yang rawan collision.
+            $saleNumber = DB::selectOne('SELECT fn_next_sale_number(?) AS sale_number', [$store->id])->sale_number;
             $paymentMethod = $data['payment_method'] ?? 'cash';
             $amountPaid = floatval($data['cash_received'] ?? $grandTotal);
             $changeAmount = max(0, $amountPaid - $grandTotal);
@@ -190,26 +218,54 @@ class SaleService
             $sale->notes = $data['notes'] ?? null;
             $sale->save();
 
-            // Insert Sale Items
+            // Insert Sale Items — trigger DB `trg_decrement_stock_on_sale_item` dieksekusi
+            // OTOMATIS setelah setiap baris INSERT ini, mengurangi inventory_stock dan
+            // mencatat inventory_movements secara atomik.
+            // ⚠️  Jangan tambahkan SaleItem::insert() lagi di bawah blok ini.
             foreach ($saleItemsData as $index => $item) {
                 $saleItemsData[$index]['sale_id'] = $saleId;
             }
             SaleItem::insert($saleItemsData);
 
+            // Priority 4: Insert sale_discounts (pelacak diskon per transaksi)
+            if (!empty($saleDiscountsData)) {
+                $now = Carbon::now();
+                foreach ($saleDiscountsData as $i => $sd) {
+                    $saleDiscountsData[$i]['sale_id']    = $saleId;
+                    $saleDiscountsData[$i]['created_at'] = $now;
+                }
+                DB::table('sale_discounts')->insert($saleDiscountsData);
+            }
+
             // Insert Payment
             if ($amountPaid > 0) {
                 Payment::create([
-                    'id' => Str::uuid()->toString(),
-                    'sale_id' => $saleId,
+                    'id'             => Str::uuid()->toString(),
+                    'sale_id'        => $saleId,
                     'payment_method' => $paymentMethod,
-                    'amount' => min($amountPaid, $grandTotal), // yang diakui sbg omset real sesuai grand total di sistem akutansi atau total bayar
-                    'change_amount' => $changeAmount,
-                    'paid_at' => Carbon::now()
+                    'amount'         => min($amountPaid, $grandTotal),
+                    'change_amount'  => $changeAmount,
+                    'paid_at'        => Carbon::now()
                 ]);
             }
 
-            // Insert Inventory Movements (akan memicu trigger update ke inventory_stock otomatis)
-            InventoryMovement::insert($inventoryMovementsData);
+            // Priority 5: Insert loyalty_ledger jika ada pelanggan
+            $customerId = $data['customer_id'] ?? null;
+            if ($customerId) {
+                // Earn points: 1 poin per Rp 10.000 yang dibayarkan (bisa dikonfigurasi)
+                $pointsEarned = (int) floor($grandTotal / 10000);
+                if ($pointsEarned > 0) {
+                    DB::table('loyalty_ledger')->insert([
+                        'id'            => Str::uuid()->toString(),
+                        'customer_id'   => $customerId,
+                        'sale_id'       => $saleId,
+                        'points_change' => $pointsEarned,
+                        'description'   => 'Poin dari transaksi ' . $saleNumber,
+                        'created_at'    => Carbon::now(),
+                    ]);
+                    // customers.loyalty_points diupdate OTOMATIS oleh trigger trg_sync_loyalty_points
+                }
+            }
 
             return $sale->load(['items.variant.product', 'payments']);
         });

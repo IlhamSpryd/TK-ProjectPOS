@@ -51,8 +51,16 @@ class MovementIndex extends Component
         return view('livewire.inventory.movement-index', [
             'movements' => $movements,
             'store' => $store
-        ]);
+        ])
+            ->layout('components.layouts.app', [
+                'title' => 'Pergerakan Stok',
+                'breadcrumbs' => [
+                    ['label' => 'Dashboard', 'route' => route('dashboard')],
+                    ['label' => 'Pergerakan Stok']
+                ],
+                'actions' => new \Illuminate\Support\HtmlString(\Illuminate\Support\Facades\Blade::render(
+                    '<x-ui.button variant="primary" icon="plus" href="{{ route(\'inventory.movements.create\') }}" wire:navigate>Tambah Pergerakan</x-ui.button>'
+                ))
+            ]);
     }
 }
-
-

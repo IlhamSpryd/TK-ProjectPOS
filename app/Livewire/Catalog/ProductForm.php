@@ -199,6 +199,18 @@ class ProductForm extends Component
     {
         return view('livewire.catalog.product-form', [
             'categories' => Category::where('active', true)->orderBy('name')->get()
-        ]);
+        ])
+            ->layout('components.layouts.app', [
+                'title' => $this->productId ? 'Edit Produk' : 'Tambah Produk Baru',
+                'breadcrumbs' => [
+                    ['label' => 'Dashboard', 'route' => route('dashboard')],
+                    ['label' => 'Katalog Produk', 'route' => route('catalog.products')],
+                    ['label' => $this->productId ? 'Edit' : 'Tambah']
+                ],
+                'actions' => new \Illuminate\Support\HtmlString(\Illuminate\Support\Facades\Blade::render(
+                    '<x-ui.button variant="ghost" href="{{ route(\'catalog.products\') }}" wire:navigate class="px-5">Batal</x-ui.button>
+                     <x-ui.button variant="primary" wire:click="save" class="px-6 shadow-xs">Simpan Produk</x-ui.button>'
+                ))
+            ]);
     }
 }

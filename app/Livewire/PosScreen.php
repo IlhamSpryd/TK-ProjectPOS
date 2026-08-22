@@ -299,7 +299,8 @@ class PosScreen extends Component
             'categories' => $categories,
             'storeId' => $storeId,
             'stockMap' => $stockMap,
+        ])->layout('components.layouts.app', [
+            'title' => 'Kasir / POS'
         ]);
     }
 }
-

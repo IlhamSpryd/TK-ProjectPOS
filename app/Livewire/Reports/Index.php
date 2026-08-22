@@ -55,6 +55,15 @@ class Index extends Component
             'totalRevenue' => $totalRevenue,
             'totalTransactions' => $totalTransactions,
             'totalItemsSold' => $totalItemsSold
+        ])->layout('components.layouts.app', [
+            'title' => 'Laporan Penjualan',
+            'breadcrumbs' => [
+                ['label' => 'Dashboard', 'route' => route('dashboard')],
+                ['label' => 'Laporan']
+            ],
+            'actions' => new \Illuminate\Support\HtmlString(\Illuminate\Support\Facades\Blade::render(
+                '<x-ui.select name="dateRange" wire:model.live="dateRange" class="w-40 bg-white"><option value="today">Hari Ini</option><option value="week">Minggu Ini</option><option value="month">Bulan Ini</option></x-ui.select>'
+            ))
         ]);
     }
 }

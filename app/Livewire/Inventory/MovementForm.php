@@ -128,10 +128,16 @@ class MovementForm extends Component
             ->orderBy('sku')
             ->get();
 
-        return view('livewire.inventory.movement-form', [
-            'variants' => $variants
-        ]);
+        return view('livewire.inventory.movement-form', compact('variants'))
+            ->layout('components.layouts.app', [
+                'title' => 'Tambah Pergerakan',
+                'breadcrumbs' => [
+                    ['label' => 'Dashboard', 'route' => route('dashboard')],
+                    ['label' => 'Pergerakan Stok']
+                ],
+                'actions' => new \Illuminate\Support\HtmlString(\Illuminate\Support\Facades\Blade::render(
+                    '<x-ui.button variant="ghost" icon="arrow-left" href="{{ route(\'inventory.movements\') }}" wire:navigate>Kembali</x-ui.button>'
+                ))
+            ]);
     }
 }
-
-

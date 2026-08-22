@@ -1,12 +1,4 @@
-<x-layouts.app title="Laporan Penjualan" :breadcrumbs="[['label' => 'Dashboard', 'route' => route('dashboard')], ['label' => 'Laporan']]">
 <div class="py-6">
-    <x-slot:actions>
-        <x-ui.select name="dateRange" wire:model.live="dateRange" class="w-40 bg-white">
-            <option value="today">Hari Ini</option>
-            <option value="week">Minggu Ini</option>
-            <option value="month">Bulan Ini</option>
-        </x-ui.select>
-    </x-slot:actions>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <x-ui.card class="p-6 border-neutral-200">
@@ -30,7 +22,8 @@
             <h3 class="font-semibold text-neutral-800">Riwayat Transaksi</h3>
         </div>
 
-        <x-ui.table>
+        <div class="hidden md:block">
+            <x-ui.table>
             <x-slot:head>
                 <x-ui.table.th class="pl-6">No. Invoice</x-ui.table.th>
                 <x-ui.table.th>Waktu</x-ui.table.th>
@@ -69,7 +62,7 @@
                         @endif
                     </x-ui.table.td>
                     <x-ui.table.td class="text-right pr-6">
-                        <x-ui.button size="sm" variant="ghost" class="text-neutral-500 hover:text-primary-600">Detail</x-ui.button>
+                        <x-ui.button size="sm" variant="ghost" class="text-neutral-500 hover:text-primary-600" aria-label="Detail Transaksi">Detail</x-ui.button>
                     </x-ui.table.td>
                 </x-ui.table.tr>
             @empty
@@ -78,6 +71,45 @@
                 </x-slot:empty>
             @endforelse
         </x-ui.table>
+        </div>
+
+        <div class="block md:hidden border-t border-neutral-200 divide-y divide-neutral-100">
+            @forelse ($sales as $sale)
+                <div class="p-4 flex flex-col gap-3 hover:bg-neutral-50 transition-colors">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="font-mono text-xs px-2 py-1 bg-neutral-100 rounded-md text-neutral-600 font-semibold">{{ $sale->sale_number ?? $sale->id }}</span>
+                            <span class="text-xs text-neutral-500">{{ $sale->created_at->format('d M Y, H:i') }}</span>
+                        </div>
+                        <div>
+                            @if($sale->status === 'completed')
+                                <x-ui.badge variant="success">Selesai</x-ui.badge>
+                            @elseif($sale->status === 'pending')
+                                <x-ui.badge variant="warning">Tertunda</x-ui.badge>
+                            @else
+                                <x-ui.badge variant="danger">Batal</x-ui.badge>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between mt-1">
+                        <div class="flex items-center gap-2">
+                            <div class="w-6 h-6 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-500">
+                                <flux:icon.user class="w-3 h-3" />
+                            </div>
+                            <span class="text-body-sm font-medium text-neutral-700">{{ $sale->customer ? $sale->customer->name : 'Umum' }}</span>
+                        </div>
+                        <span class="text-body-sm font-semibold text-neutral-800">Rp {{ number_format($sale->grand_total, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="flex items-center justify-end gap-2 pt-2 border-t border-neutral-100">
+                        <x-ui.button size="sm" variant="ghost" class="text-neutral-500 hover:text-primary-600" aria-label="Detail Transaksi">Detail</x-ui.button>
+                    </div>
+                </div>
+            @empty
+                <div class="p-8">
+                    <x-ui.empty-state icon="document-text" title="Tidak ada transaksi" description="Belum ada transaksi pada periode ini." />
+                </div>
+            @endforelse
+        </div>
         
         @if($sales->hasPages())
             <div class="p-4 border-t border-neutral-200">
@@ -86,5 +118,3 @@
         @endif
     </x-ui.card>
 </div>
-</x-layouts.app>
-

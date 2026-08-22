@@ -69,7 +69,14 @@ class Dashboard extends Component
             'store' => $store,
             'chartLabels' => $chartLabels,
             'chartData' => $chartData
+        ])->layout('components.layouts.app', [
+            'title' => 'Dashboard',
+            'breadcrumbs' => [
+                ['label' => 'Dashboard']
+            ],
+            'actions' => new \Illuminate\Support\HtmlString(\Illuminate\Support\Facades\Blade::render(
+                '<x-ui.button variant="primary" icon="calculator" href="{{ route(\'pos\') }}" wire:navigate>Buka Kasir</x-ui.button>'
+            ))
         ]);
     }
 }
-

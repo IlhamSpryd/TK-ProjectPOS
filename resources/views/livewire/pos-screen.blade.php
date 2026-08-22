@@ -1,4 +1,3 @@
-<x-layouts.app title="Kasir / POS">
 <div class="flex flex-col h-full bg-white overflow-hidden text-neutral-800" x-data="{ 
     activeCategory: 'all', 
     showCheckoutModal: @entangle('showSuccessModal')
@@ -241,7 +240,7 @@
     </div>
 
     <!-- Checkout Success Modal -->
-    <x-ui.modal wire:model="showSuccessModal" maxWidth="md">
+    <x-ui.modal name="checkout-success" wire:model="showSuccessModal" maxWidth="md">
         <div class="p-6 text-center">
             <div class="w-16 h-16 bg-success-100 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-success-50">
                 <svg class="w-8 h-8 text-success-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
@@ -276,4 +275,3 @@
         </div>
     </x-ui.modal>
 </div>
-</x-layouts.app>

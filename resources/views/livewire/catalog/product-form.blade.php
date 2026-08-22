@@ -1,11 +1,4 @@
-<x-layouts.app :title="$productId ? 'Edit Produk' : 'Tambah Produk Baru'" :breadcrumbs="[['label' => 'Dashboard', 'route' => route('dashboard')], ['label' => 'Katalog Produk', 'route' => route('catalog.products')], ['label' => $productId ? 'Edit' : 'Tambah']]">
-<div class="py-6">
-    <x-slot:actions>
-        <x-ui.button variant="ghost" href="{{ route('catalog.products') }}" wire:navigate class="px-5">Batal</x-ui.button>
-        <x-ui.button variant="primary" wire:click="save" class="px-6 shadow-xs">
-            Simpan Produk
-        </x-ui.button>
-    </x-slot:actions>
+<div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="col-span-2 space-y-6">
@@ -74,7 +67,7 @@
                                     <span class="font-semibold text-body-sm text-neutral-800">Detail Varian</span>
                                 </div>
                                 @if(collect($variants)->where('is_deleted', false)->count() > 1)
-                                    <x-ui.button size="sm" variant="ghost" icon="trash" class="text-neutral-400 hover:text-danger-600 hover:bg-danger-50 transition-colors" wire:click="removeVariant({{ $index }})" />
+                                    <x-ui.button size="sm" variant="ghost" icon="trash" aria-label="Hapus Varian" class="text-neutral-400 hover:text-danger-600 hover:bg-danger-50 transition-colors" wire:click="removeVariant({{ $index }})" />
                                 @endif
                             </div>
                             
@@ -133,10 +126,10 @@
                                 <img src="{{ Storage::url($existingImage) }}" class="w-full h-full object-cover">
                             @endif
                             <div class="absolute inset-0 bg-neutral-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                                <label for="product_image" class="cursor-pointer bg-white/90 text-neutral-800 hover:bg-white px-3 py-2 rounded-lg text-sm font-medium shadow-sm transition-colors flex items-center gap-2">
+                                <label for="product_image" tabindex="0" aria-label="Ganti Foto Produk" class="cursor-pointer bg-white/90 text-neutral-800 hover:bg-white px-3 py-2 rounded-lg text-sm font-medium shadow-sm transition-colors flex items-center gap-2 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">
                                     <flux:icon.arrow-path class="w-4 h-4" /> Ganti
                                 </label>
-                                <button type="button" wire:click="$set('image', null); $set('existingImage', null)" class="bg-danger-50 text-danger-600 hover:bg-danger-100 px-3 py-2 rounded-lg text-sm font-medium shadow-sm transition-colors flex items-center gap-2">
+                                <button type="button" aria-label="Hapus Foto Produk" wire:click="$set('image', null); $set('existingImage', null)" class="bg-danger-50 text-danger-600 hover:bg-danger-100 px-3 py-2 rounded-lg text-sm font-medium shadow-sm transition-colors flex items-center gap-2 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-danger-500 focus-visible:ring-offset-2">
                                     <flux:icon.trash class="w-4 h-4" /> Hapus
                                 </button>
                             </div>
@@ -218,5 +211,3 @@
         </div>
     </div>
 </div>
-</x-layouts.app>
-
