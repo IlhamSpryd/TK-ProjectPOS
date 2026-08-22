@@ -132,7 +132,7 @@ class Form extends Component
 
     public function render()
     {
-        $taxCategories = TaxCategory::where('active', true)->orderBy('name')->get();
+        $taxCategories = TaxCategory::activeCached();
         return view('livewire.stores.form', [
             'taxCategories' => $taxCategories
         ]);

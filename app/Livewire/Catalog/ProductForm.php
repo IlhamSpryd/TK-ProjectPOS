@@ -198,7 +198,7 @@ class ProductForm extends Component
     public function render()
     {
         return view('livewire.catalog.product-form', [
-            'categories' => Category::where('active', true)->orderBy('name')->get()
+            'categories' => Category::activeCached()
         ])
             ->layout('components.layouts.app', [
                 'title' => $this->productId ? 'Edit Produk' : 'Tambah Produk Baru',

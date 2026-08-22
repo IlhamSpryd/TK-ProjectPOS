@@ -27,4 +27,12 @@ class TaxCategory extends Model
         'active' => 'boolean'
     ];
 
+    public static function activeCached(): \Illuminate\Support\Collection
+    {
+        return \Illuminate\Support\Facades\Cache::remember(
+            'tax_categories:active:v1',
+            now()->addHours(6),
+            fn () => self::where('active', true)->orderBy('name')->get()
+        );
+    }
 }
