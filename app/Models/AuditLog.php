@@ -10,8 +10,11 @@ class AuditLog extends Model
     use HasFactory;
 
     protected $table = 'audit_logs';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
+
     public $timestamps = false;
 
     protected $fillable = [
@@ -20,7 +23,7 @@ class AuditLog extends Model
         'action',
         'old_data',
         'new_data',
-        'changed_by'
+        'changed_by',
     ];
 
     protected $casts = [

@@ -10,8 +10,11 @@ class SaleReturn extends Model
     use HasFactory;
 
     protected $table = 'sale_returns';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
+
     public $timestamps = false;
 
     protected $fillable = [
@@ -19,16 +22,27 @@ class SaleReturn extends Model
         'staff_id',
         'return_date',
         'total_refund',
-        'reason'
+        'reason',
     ];
 
     protected $casts = [
         'id' => 'string',
         'return_date' => 'datetime',
-        'total_refund' => 'decimal:2'
+        'total_refund' => 'decimal:2',
     ];
 
-    public function sale() { return $this->belongsTo(Sale::class); }
-    public function staff() { return $this->belongsTo(Staff::class); }
-    public function items() { return $this->hasMany(SaleReturnItem::class); }
+    public function sale()
+    {
+        return $this->belongsTo(Sale::class);
+    }
+
+    public function staff()
+    {
+        return $this->belongsTo(Staff::class);
+    }
+
+    public function items()
+    {
+        return $this->hasMany(SaleReturnItem::class);
+    }
 }

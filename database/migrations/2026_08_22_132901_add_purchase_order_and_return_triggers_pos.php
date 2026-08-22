@@ -155,12 +155,12 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::connection('pgsql_admin')->unprepared("
+        DB::connection('pgsql_admin')->unprepared('
             DROP TRIGGER IF EXISTS trg_increment_stock_on_sale_return_item ON sale_return_items;
             DROP FUNCTION IF EXISTS fn_increment_stock_on_sale_return_item();
             
             DROP TRIGGER IF EXISTS trg_increment_stock_on_po_item_received ON purchase_order_items;
             DROP FUNCTION IF EXISTS fn_increment_stock_on_po_item_received();
-        ");
+        ');
     }
 };

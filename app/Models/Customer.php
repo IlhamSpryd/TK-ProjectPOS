@@ -11,7 +11,9 @@ class Customer extends Model
     use HasFactory, SoftDeletes;
 
     protected $table = 'customers';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
 
     protected $fillable = [
@@ -21,12 +23,11 @@ class Customer extends Model
         'address',
         'npwp',
         'loyalty_points',
-        'active'
+        'active',
     ];
 
     protected $casts = [
         'id' => 'string',
-        'active' => 'boolean'
+        'active' => 'boolean',
     ];
-
 }

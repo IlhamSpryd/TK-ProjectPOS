@@ -136,13 +136,13 @@ return new class extends Migration
         ");
 
         // Revoke direct write access to audit_logs and inventory_stock for staff
-        DB::connection('pgsql_admin')->unprepared("
+        DB::connection('pgsql_admin')->unprepared('
             REVOKE INSERT, UPDATE, DELETE ON audit_logs FROM authenticated;
             REVOKE INSERT, UPDATE, DELETE ON inventory_stock FROM authenticated;
             
             REVOKE INSERT, UPDATE, DELETE ON audit_logs FROM anon;
             REVOKE INSERT, UPDATE, DELETE ON inventory_stock FROM anon;
-        ");
+        ');
     }
 
     /**
@@ -150,7 +150,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::connection('pgsql_admin')->unprepared("
+        DB::connection('pgsql_admin')->unprepared('
             DROP TRIGGER IF EXISTS trg_audit_sale_void ON sales;
             DROP FUNCTION IF EXISTS fn_audit_sale_void();
             
@@ -162,6 +162,6 @@ return new class extends Migration
             
             GRANT INSERT, UPDATE, DELETE ON audit_logs TO authenticated;
             GRANT INSERT, UPDATE, DELETE ON inventory_stock TO authenticated;
-        ");
+        ');
     }
 };

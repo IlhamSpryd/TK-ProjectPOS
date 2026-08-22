@@ -10,8 +10,11 @@ class InventoryMovement extends Model
     use HasFactory;
 
     protected $table = 'inventory_movements';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
+
     public $timestamps = false;
 
     protected $fillable = [
@@ -22,15 +25,26 @@ class InventoryMovement extends Model
         'reference_table',
         'reference_id',
         'note',
-        'staff_id'
+        'staff_id',
     ];
 
     protected $casts = [
         'id' => 'string',
-        'quantity_change' => 'decimal:2'
+        'quantity_change' => 'decimal:2',
     ];
 
-    public function variant() { return $this->belongsTo(ProductVariant::class, 'variant_id'); }
-    public function store() { return $this->belongsTo(Store::class); }
-    public function staff() { return $this->belongsTo(Staff::class); }
+    public function variant()
+    {
+        return $this->belongsTo(ProductVariant::class, 'variant_id');
+    }
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
+    }
+
+    public function staff()
+    {
+        return $this->belongsTo(Staff::class);
+    }
 }

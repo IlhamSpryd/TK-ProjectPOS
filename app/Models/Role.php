@@ -10,18 +10,20 @@ class Role extends Model
     use HasFactory;
 
     protected $table = 'roles';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
+
     public $timestamps = false;
 
     protected $fillable = [
         'name',
-        'permissions'
+        'permissions',
     ];
 
     protected $casts = [
         'id' => 'string',
-        'permissions' => 'array'
+        'permissions' => 'array',
     ];
-
 }

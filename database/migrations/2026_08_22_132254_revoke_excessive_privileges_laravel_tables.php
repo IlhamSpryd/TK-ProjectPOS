@@ -20,7 +20,7 @@ return new class extends Migration
             'job_batches',
             'failed_jobs',
             'passkeys',
-            'migrations'
+            'migrations',
         ];
 
         foreach ($tables as $table) {

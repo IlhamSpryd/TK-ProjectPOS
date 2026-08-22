@@ -1,5 +1,5 @@
 <div x-show="sidebarOpen" @click="sidebarOpen = false" x-transition.opacity.duration.200ms
-    class="fixed inset-0 bg-neutral-900/20 z-30" x-cloak tabindex="-1" aria-hidden="true"></div>
+    class="fixed inset-0 bg-neutral-900/30 backdrop-blur-[2px] z-30" x-cloak tabindex="-1" aria-hidden="true"></div>
 
 <aside id="main-sidebar" role="navigation" aria-label="Navigasi utama" x-data="{
     trapFocus(e) {
@@ -20,34 +20,32 @@
             }
         }
     }
-}" @keydown.tab="trapFocus($event)"
-    @keydown.escape.window="sidebarOpen = false"
+}"
+    @keydown.tab="trapFocus($event)" @keydown.escape.window="sidebarOpen = false"
     :class="[
         sidebarOpen ? 'translate-x-0' : '-translate-x-full',
         ready ? 'transition-transform duration-300 ease-out' : ''
     ]"
-    class="bg-white border-r border-neutral-200 flex flex-col fixed inset-y-0 left-0 w-64 h-full z-40 text-neutral-900 overflow-x-hidden shadow-xl">
+    class="bg-white border-r border-neutral-200 flex flex-col fixed inset-y-0 left-0 w-64 h-full z-40 text-neutral-900 overflow-x-hidden shadow-lg">
 
-    <div class="h-16 flex items-center justify-between px-4 mb-2 mt-2">
-        <!-- Logo -->
-        <div class="flex items-center">
-            <div class="w-8 h-8 rounded bg-neutral-900 flex items-center justify-center shrink-0">
+    <!-- Brand -->
+    <div class="h-16 flex items-center justify-between px-4 border-b border-neutral-100 shrink-0">
+        <div class="flex items-center min-w-0">
+            <div class="w-8 h-8 rounded-lg bg-neutral-900 flex items-center justify-center shrink-0">
                 <span class="text-white text-body-sm font-bold leading-none">P</span>
             </div>
-            
-            <div class="ml-3 flex items-center whitespace-nowrap">
-                <span class="text-body font-bold text-neutral-900 tracking-tight">POS System</span>
-            </div>
+            <span class="ml-3 text-body font-bold text-neutral-900 tracking-tight truncate">POS System</span>
         </div>
 
-        <!-- Close Button -->
-        <button @click="sidebarOpen = false" class="p-1.5 -mr-1.5 rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:outline-none transition-colors">
+        <button @click="sidebarOpen = false" aria-label="Tutup sidebar"
+            class="p-1.5 -mr-1.5 rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:outline-none transition-colors shrink-0">
             <flux:icon name="x-mark" variant="outline" class="w-5 h-5 stroke-2" />
         </button>
     </div>
 
-    <nav class="flex-1 py-2 relative px-3">
-        <div class="flex flex-col w-full space-y-1">
+    <!-- Navigation (scrollable) -->
+    <nav class="sidebar-nav-scroll flex-1 min-h-0 overflow-y-auto py-3 px-3">
+        <div class="flex flex-col w-full space-y-0.5">
             @php
                 $user = auth('web')->user();
                 $isSuperAdmin = $user && method_exists($user, 'isSuperAdmin') ? $user->isSuperAdmin() : false;
@@ -143,8 +141,8 @@
                 @endif
             @endforeach
 
-            <div class="mt-4 mb-1 px-3">
-                <div class="text-caption font-bold text-neutral-400 uppercase tracking-wider">Manajemen</div>
+            <div class="mt-5 mb-1.5 px-3">
+                <div class="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">Manajemen</div>
             </div>
 
             @foreach ($managementItems as $item)
@@ -153,8 +151,8 @@
                 @endif
             @endforeach
 
-            <div class="mt-4 mb-1 px-3">
-                <div class="text-caption font-bold text-neutral-400 uppercase tracking-wider">Akun</div>
+            <div class="mt-5 mb-1.5 px-3">
+                <div class="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">Akun</div>
             </div>
 
             @foreach ($accountItems as $item)
@@ -165,7 +163,34 @@
         </div>
     </nav>
 
-    <div class="relative border-t border-neutral-100 p-2">
+    <!-- User menu (pinned) -->
+    <div class="border-t border-neutral-100 p-2 shrink-0">
         <x-desktop-user-menu position="top" align="start" />
     </div>
 </aside>
+
+<style>
+    /* Scrollbar tipis & senyap untuk area navigasi — menghindari scrollbar
+       tebal bawaan browser yang terasa berat di dalam drawer selebar 256px. */
+    .sidebar-nav-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: #d4d4d4 transparent;
+    }
+
+    .sidebar-nav-scroll::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .sidebar-nav-scroll::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .sidebar-nav-scroll::-webkit-scrollbar-thumb {
+        background-color: #d4d4d4;
+        border-radius: 9999px;
+    }
+
+    .sidebar-nav-scroll::-webkit-scrollbar-thumb:hover {
+        background-color: #a3a3a3;
+    }
+</style>

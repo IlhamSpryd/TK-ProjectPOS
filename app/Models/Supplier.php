@@ -11,7 +11,9 @@ class Supplier extends Model
     use HasFactory, SoftDeletes;
 
     protected $table = 'suppliers';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
 
     protected $fillable = [
@@ -20,12 +22,11 @@ class Supplier extends Model
         'phone',
         'email',
         'address',
-        'active'
+        'active',
     ];
 
     protected $casts = [
         'id' => 'string',
-        'active' => 'boolean'
+        'active' => 'boolean',
     ];
-
 }

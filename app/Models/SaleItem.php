@@ -10,8 +10,11 @@ class SaleItem extends Model
     use HasFactory;
 
     protected $table = 'sale_items';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
+
     public $timestamps = false;
 
     protected $fillable = [
@@ -22,7 +25,7 @@ class SaleItem extends Model
         'cost_price',
         'discount',
         'tax_category_id',
-        'tax_amount'
+        'tax_amount',
     ];
 
     protected $casts = [
@@ -31,11 +34,26 @@ class SaleItem extends Model
         'unit_price' => 'decimal:2',
         'cost_price' => 'decimal:2',
         'discount' => 'decimal:2',
-        'tax_amount' => 'decimal:2'
+        'tax_amount' => 'decimal:2',
     ];
 
-    public function sale() { return $this->belongsTo(Sale::class); }
-    public function variant() { return $this->belongsTo(ProductVariant::class, 'variant_id'); }
-    public function taxCategory() { return $this->belongsTo(TaxCategory::class); }
-    public function discount() { return $this->belongsTo(Discount::class); }
+    public function sale()
+    {
+        return $this->belongsTo(Sale::class);
+    }
+
+    public function variant()
+    {
+        return $this->belongsTo(ProductVariant::class, 'variant_id');
+    }
+
+    public function taxCategory()
+    {
+        return $this->belongsTo(TaxCategory::class);
+    }
+
+    public function discount()
+    {
+        return $this->belongsTo(Discount::class);
+    }
 }

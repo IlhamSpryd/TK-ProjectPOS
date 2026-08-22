@@ -10,8 +10,11 @@ class PurchaseOrderItem extends Model
     use HasFactory;
 
     protected $table = 'purchase_order_items';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
+
     public $timestamps = false;
 
     protected $fillable = [
@@ -21,7 +24,7 @@ class PurchaseOrderItem extends Model
         'cost_price',
         'discount',
         'received_quantity',
-        'received'
+        'received',
     ];
 
     protected $casts = [
@@ -30,9 +33,16 @@ class PurchaseOrderItem extends Model
         'cost_price' => 'decimal:2',
         'discount' => 'decimal:2',
         'received_quantity' => 'decimal:2',
-        'received' => 'boolean'
+        'received' => 'boolean',
     ];
 
-    public function purchaseOrder() { return $this->belongsTo(PurchaseOrder::class); }
-    public function variant() { return $this->belongsTo(ProductVariant::class, 'variant_id'); }
+    public function purchaseOrder()
+    {
+        return $this->belongsTo(PurchaseOrder::class);
+    }
+
+    public function variant()
+    {
+        return $this->belongsTo(ProductVariant::class, 'variant_id');
+    }
 }

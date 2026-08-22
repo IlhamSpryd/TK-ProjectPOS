@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Store;
+use Illuminate\Database\Seeder;
 
 class StoreSeeder extends Seeder
 {
@@ -15,7 +15,7 @@ class StoreSeeder extends Seeder
             'is_pkp' => true,
             'currency' => 'IDR',
             'timezone' => 'Asia/Jakarta',
-            'active' => true
+            'active' => true,
         ]);
     }
 }

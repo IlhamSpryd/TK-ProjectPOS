@@ -4,36 +4,41 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
 class TaxCategory extends Model
 {
     use HasFactory;
 
     protected $table = 'tax_categories';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
+
     public $timestamps = false;
 
     protected $fillable = [
         'name',
         'tax_type',
         'rate',
-        'active'
+        'active',
     ];
 
     protected $casts = [
         'id' => 'string',
         'rate' => 'decimal:2',
-        'active' => 'boolean'
+        'active' => 'boolean',
     ];
 
     protected static $activeCache = null;
 
-    public static function activeCached(): \Illuminate\Support\Collection
+    public static function activeCached(): Collection
     {
         if (self::$activeCache === null) {
             self::$activeCache = self::where('active', true)->orderBy('name')->get();
         }
+
         return self::$activeCache;
     }
 

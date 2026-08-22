@@ -10,8 +10,11 @@ class Discount extends Model
     use HasFactory;
 
     protected $table = 'discounts';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
+
     public $timestamps = false;
 
     protected $fillable = [
@@ -21,7 +24,7 @@ class Discount extends Model
         'value',
         'start_date',
         'end_date',
-        'active'
+        'active',
     ];
 
     protected $casts = [
@@ -29,8 +32,11 @@ class Discount extends Model
         'value' => 'decimal:2',
         'start_date' => 'datetime',
         'end_date' => 'datetime',
-        'active' => 'boolean'
+        'active' => 'boolean',
     ];
 
-    public function store() { return $this->belongsTo(Store::class); }
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
+    }
 }
