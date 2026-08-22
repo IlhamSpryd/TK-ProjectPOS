@@ -299,6 +299,7 @@ class PosScreen extends Component
             'categories' => $categories,
             'storeId' => $storeId,
             'stockMap' => $stockMap,
-        ])->layout('layouts.app');
+        ]);
     }
 }
+

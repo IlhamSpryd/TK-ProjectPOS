@@ -1,3 +1,4 @@
+<x-layouts.app title="Kasir / POS">
 <div class="flex flex-col h-full bg-white overflow-hidden text-neutral-800" x-data="{ 
     activeCategory: 'all', 
     showCheckoutModal: @entangle('showSuccessModal')
@@ -98,8 +99,7 @@
                 
                 @if(count($products) == 0)
                     <div class="flex flex-col items-center justify-center h-full text-neutral-400 py-10">
-                        <svg class="w-10 h-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                        <p class="text-[13px] font-medium text-neutral-500">Tidak ada produk ditemukan.</p>
+                        <x-ui.empty-state icon="cube" title="Tidak ada produk" description="Coba ubah kata kunci pencarian atau kategori." />
                     </div>
                 @endif
                 @if(count($products) > 0)
@@ -240,23 +240,40 @@
         </aside>
     </div>
 
-    <!-- Success Modal -->
-    <div x-show="showCheckoutModal" style="display: none;" class="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/20 backdrop-blur-sm">
-        <div x-show="showCheckoutModal" x-transition.opacity class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm border border-neutral-200 mx-4 transform transition-all">
-            <div class="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-4 border border-emerald-100">
-                <svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+    <!-- Checkout Success Modal -->
+    <x-ui.modal wire:model="showSuccessModal" maxWidth="md">
+        <div class="p-6 text-center">
+            <div class="w-16 h-16 bg-success-100 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-success-50">
+                <svg class="w-8 h-8 text-success-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
             </div>
-            <h3 class="text-[16px] font-semibold text-center mb-1 text-neutral-900">Transaksi Berhasil!</h3>
-            <p class="text-[13px] font-medium text-center text-neutral-500 mb-5">Pembayaran telah diterima, pesanan selesai.</p>
-            <div class="space-y-2">
-                <button type="button" class="w-full py-2 bg-white border border-neutral-200 rounded-md text-[13px] font-medium text-neutral-700 hover:bg-neutral-50 transition-colors flex items-center justify-center gap-1.5">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+            <h3 class="text-h3 font-bold text-neutral-900 mb-2">Transaksi Berhasil!</h3>
+            <p class="text-body text-neutral-500 mb-6">Pembayaran telah diterima dan struk siap dicetak.</p>
+            
+            <div class="bg-neutral-50 rounded-xl p-4 mb-6 border border-neutral-100">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-body-sm text-neutral-500 font-medium">Total Tagihan</span>
+                    <span class="font-bold text-neutral-900">Rp {{ number_format($lastSale?->grand_total ?? 0, 0, ',', '.') }}</span>
+                </div>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-body-sm text-neutral-500 font-medium">Tunai Diterima</span>
+                    <span class="font-medium text-neutral-900">Rp {{ number_format($lastSale?->cash_received ?? 0, 0, ',', '.') }}</span>
+                </div>
+                <div class="w-full h-px bg-neutral-200 my-2 border-dashed"></div>
+                <div class="flex justify-between items-center text-success-600 font-bold">
+                    <span>Kembalian</span>
+                    <span>Rp {{ number_format($lastSale?->change_amount ?? 0, 0, ',', '.') }}</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <x-ui.button variant="primary" class="w-full justify-center">
                     Cetak Struk
-                </button>
-                <button wire:click="startNewTransaction" type="button" class="w-full py-2 bg-neutral-800 text-white rounded-md text-[13px] font-medium hover:bg-neutral-900 transition-colors">
+                </x-ui.button>
+                <x-ui.button variant="ghost" class="w-full justify-center text-neutral-600 hover:text-neutral-900" wire:click="startNewTransaction">
                     Transaksi Baru
-                </button>
+                </x-ui.button>
             </div>
         </div>
-    </div>
+    </x-ui.modal>
 </div>
+</x-layouts.app>
