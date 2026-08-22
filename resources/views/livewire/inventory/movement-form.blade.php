@@ -1,9 +1,10 @@
+<x-layouts.app title="Tambah Pergerakan" :breadcrumbs="[['label' => 'Dashboard', 'route' => route('dashboard')], ['label' => 'Pergerakan Stok']]">
 <div class="py-6 max-w-2xl mx-auto">
-    <x-ui.page-header title="Tambah Pergerakan Stok" description="Catat barang masuk, keluar, atau penyesuaian stok.">
+    <x-slot:actions>
         <x-ui.button variant="ghost" icon="arrow-left" href="{{ route('inventory.movements') }}" wire:navigate>
             Kembali
         </x-ui.button>
-    </x-ui.page-header>
+    </x-slot:actions>
 
     <x-ui.card class="mt-6">
         <form wire:submit.prevent="save" class="space-y-6">
@@ -22,9 +23,9 @@
             <div>
                 <x-ui.label for="movement_type" class="mb-1.5">Tipe Pergerakan <span class="text-danger-500">*</span></x-ui.label>
                 <select id="movement_type" wire:model="movement_type" class="bg-white border border-neutral-200 text-neutral-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5">
-                    <option value="IN">Masuk (IN)</option>
-                    <option value="OUT">Keluar (OUT)</option>
-                    <option value="ADJUSTMENT">Penyesuaian (ADJUSTMENT)</option>
+                    <option value="adjustment_in">Barang Masuk (Adjustment IN)</option>
+                    <option value="adjustment_out">Barang Keluar (Adjustment OUT)</option>
+                    <option value="write_off">Pemusnahan / Hilang (Write Off)</option>
                 </select>
                 @error('movement_type') <p class="mt-1 text-sm text-danger-600">{{ $message }}</p> @enderror
             </div>
@@ -47,3 +48,5 @@
         </form>
     </x-ui.card>
 </div>
+</x-layouts.app>
+

@@ -1,9 +1,10 @@
+<x-layouts.app title="Pergerakan Stok" :breadcrumbs="[['label' => 'Dashboard', 'route' => route('dashboard')], ['label' => 'Pergerakan Stok']]">
 <div class="py-6">
-    <x-ui.page-header title="Pergerakan Inventaris" description="Kelola dan pantau arus masuk/keluar stok produk di cabang Anda.">
+    <x-slot:actions>
         <x-ui.button variant="primary" icon="plus" href="{{ route('inventory.movements.create') }}" wire:navigate>
             Tambah Pergerakan
         </x-ui.button>
-    </x-ui.page-header>
+    </x-slot:actions>
 
     <x-ui.card class="p-0 overflow-hidden border-neutral-200">
         <div class="p-4 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between gap-4">
@@ -13,11 +14,12 @@
             <div>
                 <select wire:model.live="typeFilter" class="bg-white border border-neutral-200 text-neutral-700 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5">
                     <option value="">Semua Tipe</option>
-                    <option value="IN">Masuk (IN)</option>
-                    <option value="OUT">Keluar (OUT)</option>
-                    <option value="SALE">Penjualan (SALE)</option>
-                    <option value="RETURN">Retur (RETURN)</option>
-                    <option value="ADJUSTMENT">Penyesuaian (ADJUSTMENT)</option>
+                    <option value="adjustment_in">Barang Masuk (Adjustment IN)</option>
+                    <option value="adjustment_out">Barang Keluar (Adjustment OUT)</option>
+                    <option value="write_off">Pemusnahan / Hilang (Write Off)</option>
+                    <option value="sale">Penjualan (Sale)</option>
+                    <option value="sale_return">Retur Penjualan (Sale Return)</option>
+                    <option value="po_receive">Penerimaan PO (PO Receive)</option>
                 </select>
             </div>
         </div>
@@ -52,9 +54,8 @@
                     <x-ui.table.td>
                         @php
                             $variant = match($movement->movement_type) {
-                                'IN' => 'success',
-                                'OUT', 'SALE' => 'danger',
-                                'RETURN', 'ADJUSTMENT' => 'warning',
+                                'adjustment_in', 'po_receive', 'sale_return' => 'success',
+                                'adjustment_out', 'write_off', 'sale' => 'danger',
                                 default => 'neutral'
                             };
                         @endphp
@@ -77,10 +78,7 @@
                 </x-ui.table.tr>
             @empty
                 <x-slot:empty>
-                    <div class="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center mb-3 border border-neutral-200 mx-auto">
-                        <svg class="w-8 h-8 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-                    </div>
-                    <p class="font-medium text-neutral-500">Tidak ada riwayat pergerakan stok.</p>
+                    <x-ui.empty-state icon="arrows-right-left" title="Tidak ada pergerakan" description="Belum ada riwayat pergerakan stok." />
                 </x-slot:empty>
             @endforelse
             
@@ -92,3 +90,5 @@
         </x-ui.table>
     </x-ui.card>
 </div>
+</x-layouts.app>
+

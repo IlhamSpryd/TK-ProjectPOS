@@ -30,28 +30,29 @@ class MovementIndex extends Component
         $store = ($staff && method_exists($staff, 'getActiveStore')) ? $staff->getActiveStore() : null;
         
         $query = InventoryMovement::with(['variant.product', 'staff']);
-            // Assuming there is a created_at column even if timestamps=false. If not we'll check it later.
-            // Let's remove orderBy created_at for now just in case. Or I can check the sql schema.
-            
+
         if ($store) {
             $query->where('store_id', $store->id);
         }
 
         if ($this->search) {
-            $query->whereHas('variant.product', function($q) {
+            $query->whereHas('variant.product', function ($q) {
                 $q->where('name', 'ilike', '%' . $this->search . '%');
             });
         }
-        
+
         if ($this->typeFilter) {
             $query->where('movement_type', $this->typeFilter);
         }
 
-        $movements = $query->paginate(15);
+        $movements = $query->orderBy('created_at', 'desc')->paginate(15);
+
 
         return view('livewire.inventory.movement-index', [
             'movements' => $movements,
             'store' => $store
-        ])->layout('layouts.app');
+        ]);
     }
 }
+
+
