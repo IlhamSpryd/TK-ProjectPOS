@@ -2,12 +2,14 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
-use App\Models\Sale;
 use App\Models\ProductVariant;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use App\Models\Sale;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\HtmlString;
+use Livewire\Component;
 
 class Dashboard extends Component
 {
@@ -36,11 +38,11 @@ class Dashboard extends Component
         // 7-day revenue trend for chart (P-10) - Optimized 1 Query GROUP BY
         $chartData = [];
         $chartLabels = [];
-        
+
         if ($storeId) {
             $startDate = Carbon::today()->subDays(6);
             $endDate = Carbon::today()->endOfDay();
-            
+
             // Get data in single query grouped by date
             $salesData = Sale::where('store_id', $storeId)
                 ->whereBetween('created_at', [$startDate, $endDate])
@@ -51,12 +53,12 @@ class Dashboard extends Component
                 ->groupBy('date')
                 ->pluck('total', 'date')
                 ->toArray();
-                
+
             // Fill arrays ensuring all 7 days are represented
             for ($i = 6; $i >= 0; $i--) {
                 $dateObj = Carbon::today()->subDays($i);
                 $dateStr = $dateObj->format('Y-m-d');
-                
+
                 $chartLabels[] = $dateObj->format('d/m');
                 $chartData[] = $salesData[$dateStr] ?? 0;
             }
@@ -68,15 +70,15 @@ class Dashboard extends Component
             'totalSalesToday' => $totalSalesToday,
             'store' => $store,
             'chartLabels' => $chartLabels,
-            'chartData' => $chartData
+            'chartData' => $chartData,
         ])->layout('components.layouts.app', [
-            'title' => 'Selamat Datang, ' . (auth()->user()->full_name ?? auth()->user()->name) . ' 👋',
+            'title' => 'Selamat Datang, '.(auth()->user()->full_name ?? auth()->user()->name).' 👋',
             'breadcrumbs' => [
-                ['label' => 'Dashboard']
+                ['label' => 'Dashboard'],
             ],
-            'actions' => new \Illuminate\Support\HtmlString(\Illuminate\Support\Facades\Blade::render(
+            'actions' => new HtmlString(Blade::render(
                 '<x-ui.button variant="primary" icon="calculator" href="{{ route(\'pos\') }}" wire:navigate>Buka Kasir</x-ui.button>'
-            ))
+            )),
         ]);
     }
 }

@@ -3,7 +3,9 @@
 namespace App\Livewire\Staff;
 
 use App\Models\Staff;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\HtmlString;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -55,11 +57,11 @@ class Index extends Component
             'title' => 'Manajemen Staff',
             'breadcrumbs' => [
                 ['label' => 'Dashboard', 'route' => route('dashboard')],
-                ['label' => 'Staff']
+                ['label' => 'Staff'],
             ],
-            'actions' => new \Illuminate\Support\HtmlString(\Illuminate\Support\Facades\Blade::render(
+            'actions' => new HtmlString(Blade::render(
                 '<x-ui.button variant="primary" icon="plus" href="{{ route(\'staff.create\') }}" wire:navigate>Tambah Staff</x-ui.button>'
-            ))
+            )),
         ]);
     }
 }

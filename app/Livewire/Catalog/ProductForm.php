@@ -2,14 +2,16 @@
 
 namespace App\Livewire\Catalog;
 
-use Livewire\Component;
-use Livewire\WithFileUploads;
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductVariant;
-use App\Models\Category;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
+use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class ProductForm extends Component
 {
@@ -18,16 +20,24 @@ class ProductForm extends Component
     public ?string $productId = null;
 
     // Product fields
-    public string  $name        = '';
-    public string  $sku         = '';
+    public string $name = '';
+
+    public string $sku = '';
+
     public ?string $category_id = null;
-    public string  $description = '';
-    public string  $unit        = 'pcs';
-    public bool    $track_stock = true;
-    public bool    $is_service  = false;
-    public bool    $active      = true;
+
+    public string $description = '';
+
+    public string $unit = 'pcs';
+
+    public bool $track_stock = true;
+
+    public bool $is_service = false;
+
+    public bool $active = true;
 
     public $image;
+
     public ?string $existingImage = null;
 
     // Variants array
@@ -39,25 +49,25 @@ class ProductForm extends Component
 
         if ($this->productId) {
             $product = Product::with('variants')->findOrFail($this->productId);
-            $this->name        = $product->name;
-            $this->sku         = $product->sku ?? '';
+            $this->name = $product->name;
+            $this->sku = $product->sku ?? '';
             $this->category_id = $product->category_id;
             $this->description = $product->description ?? '';
-            $this->unit        = $product->unit ?? 'pcs';
+            $this->unit = $product->unit ?? 'pcs';
             $this->track_stock = $product->track_stock;
-            $this->is_service  = $product->is_service;
-            $this->active      = $product->active;
+            $this->is_service = $product->is_service;
+            $this->active = $product->active;
             $this->existingImage = $product->image_url;
 
             foreach ($product->variants as $variant) {
                 $this->variants[] = [
-                    'id'           => $variant->id,
-                    'sku'          => $variant->sku ?? '',
-                    'barcode'      => $variant->barcode ?? '',
-                    'cost_price'   => $variant->cost_price ?? 0,
-                    'selling_price'=> $variant->selling_price ?? 0,
-                    'active'       => $variant->active,
-                    'is_deleted'   => false,
+                    'id' => $variant->id,
+                    'sku' => $variant->sku ?? '',
+                    'barcode' => $variant->barcode ?? '',
+                    'cost_price' => $variant->cost_price ?? 0,
+                    'selling_price' => $variant->selling_price ?? 0,
+                    'active' => $variant->active,
+                    'is_deleted' => false,
                 ];
             }
         } else {
@@ -69,13 +79,13 @@ class ProductForm extends Component
     public function addVariant(): void
     {
         $this->variants[] = [
-            'id'            => null,
-            'sku'           => '',
-            'barcode'       => '',
-            'cost_price'    => 0,
+            'id' => null,
+            'sku' => '',
+            'barcode' => '',
+            'cost_price' => 0,
             'selling_price' => 0,
-            'active'        => true,
-            'is_deleted'    => false,
+            'active' => true,
+            'is_deleted' => false,
         ];
     }
 
@@ -92,13 +102,13 @@ class ProductForm extends Component
     protected function rules(): array
     {
         return [
-            'name'                       => 'required|string|max:255',
-            'sku'                        => 'nullable|string|max:100',
-            'category_id'               => 'nullable|string|exists:categories,id',
-            'unit'                       => 'nullable|string|max:50',
-            'image'                      => 'nullable|image|max:2048',
-            'variants.*.selling_price'  => 'required|numeric|min:0',
-            'variants.*.cost_price'     => 'nullable|numeric|min:0',
+            'name' => 'required|string|max:255',
+            'sku' => 'nullable|string|max:100',
+            'category_id' => 'nullable|string|exists:categories,id',
+            'unit' => 'nullable|string|max:50',
+            'image' => 'nullable|image|max:2048',
+            'variants.*.selling_price' => 'required|numeric|min:0',
+            'variants.*.cost_price' => 'nullable|numeric|min:0',
         ];
     }
 
@@ -109,6 +119,7 @@ class ProductForm extends Component
         $activeVariantsCount = collect($this->variants)->where('is_deleted', false)->count();
         if ($activeVariantsCount === 0) {
             $this->dispatch('toast', message: 'Minimal harus ada 1 varian produk.', type: 'error');
+
             return;
         }
 
@@ -122,14 +133,14 @@ class ProductForm extends Component
                     $product = Product::findOrFail($this->productId);
 
                     $updateData = [
-                        'name'        => $this->name,
-                        'sku'         => $this->sku ?: null,
+                        'name' => $this->name,
+                        'sku' => $this->sku ?: null,
                         'category_id' => $this->category_id ?: null,
                         'description' => $this->description,
-                        'unit'        => $this->unit,
+                        'unit' => $this->unit,
                         'track_stock' => $this->track_stock,
-                        'is_service'  => $this->is_service,
-                        'active'      => $this->active,
+                        'is_service' => $this->is_service,
+                        'active' => $this->active,
                     ];
 
                     if ($imagePath) {
@@ -139,16 +150,16 @@ class ProductForm extends Component
                     $product->update($updateData);
                 } else {
                     $product = Product::create([
-                        'id'          => Str::uuid()->toString(),
-                        'name'        => $this->name,
-                        'sku'         => $this->sku ?: null,
+                        'id' => Str::uuid()->toString(),
+                        'name' => $this->name,
+                        'sku' => $this->sku ?: null,
                         'category_id' => $this->category_id ?: null,
                         'description' => $this->description,
-                        'unit'        => $this->unit,
+                        'unit' => $this->unit,
                         'track_stock' => $this->track_stock,
-                        'is_service'  => $this->is_service,
-                        'active'      => $this->active,
-                        'image_url'   => $imagePath,
+                        'is_service' => $this->is_service,
+                        'active' => $this->active,
+                        'image_url' => $imagePath,
                     ]);
 
                     $this->productId = $product->id;
@@ -160,27 +171,28 @@ class ProductForm extends Component
                         if ($variantData['id']) {
                             ProductVariant::where('id', $variantData['id'])->delete();
                         }
+
                         continue;
                     }
 
                     if ($variantData['id']) {
                         ProductVariant::where('id', $variantData['id'])->update([
-                            'sku'           => $variantData['sku'] ?: null,
-                            'barcode'       => $variantData['barcode'] ?: null,
-                            'cost_price'    => $variantData['cost_price'] ?: 0,
+                            'sku' => $variantData['sku'] ?: null,
+                            'barcode' => $variantData['barcode'] ?: null,
+                            'cost_price' => $variantData['cost_price'] ?: 0,
                             'selling_price' => $variantData['selling_price'] ?: 0,
-                            'active'        => $variantData['active'],
+                            'active' => $variantData['active'],
                         ]);
                     } else {
                         ProductVariant::create([
-                            'id'            => Str::uuid()->toString(),
-                            'product_id'    => $product->id,
-                            'sku'           => $variantData['sku'] ?: null,
-                            'barcode'       => $variantData['barcode'] ?: null,
-                            'cost_price'    => $variantData['cost_price'] ?: 0,
+                            'id' => Str::uuid()->toString(),
+                            'product_id' => $product->id,
+                            'sku' => $variantData['sku'] ?: null,
+                            'barcode' => $variantData['barcode'] ?: null,
+                            'cost_price' => $variantData['cost_price'] ?: 0,
                             'selling_price' => $variantData['selling_price'] ?: 0,
-                            'attributes'    => [],
-                            'active'        => $variantData['active'],
+                            'attributes' => [],
+                            'active' => $variantData['active'],
                         ]);
                     }
                 }
@@ -190,27 +202,27 @@ class ProductForm extends Component
             $this->redirectRoute('catalog.products', navigate: true);
 
         } catch (\Exception $e) {
-            Log::error('Gagal menyimpan produk: ' . $e->getMessage());
-            $this->dispatch('toast', message: 'Gagal menyimpan produk: ' . $e->getMessage(), type: 'error');
+            Log::error('Gagal menyimpan produk: '.$e->getMessage());
+            $this->dispatch('toast', message: 'Gagal menyimpan produk: '.$e->getMessage(), type: 'error');
         }
     }
 
     public function render()
     {
         return view('livewire.catalog.product-form', [
-            'categories' => Category::activeCached()
+            'categories' => Category::activeCached(),
         ])
             ->layout('components.layouts.app', [
                 'title' => $this->productId ? 'Edit Produk' : 'Tambah Produk Baru',
                 'breadcrumbs' => [
                     ['label' => 'Dashboard', 'route' => route('dashboard')],
                     ['label' => 'Katalog Produk', 'route' => route('catalog.products')],
-                    ['label' => $this->productId ? 'Edit' : 'Tambah']
+                    ['label' => $this->productId ? 'Edit' : 'Tambah'],
                 ],
-                'actions' => new \Illuminate\Support\HtmlString(\Illuminate\Support\Facades\Blade::render(
+                'actions' => new HtmlString(Blade::render(
                     '<x-ui.button variant="ghost" href="{{ route(\'catalog.products\') }}" wire:navigate class="px-5">Batal</x-ui.button>
-                     <x-ui.button variant="primary" wire:click="save" class="px-6 shadow-xs">Simpan Produk</x-ui.button>'
-                ))
+                     <x-ui.button variant="primary" x-data x-on:click="$dispatch(\'trigger-save-product\')" class="px-6 shadow-xs">Simpan Produk</x-ui.button>'
+                )),
             ]);
     }
 }

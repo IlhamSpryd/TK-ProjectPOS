@@ -2,14 +2,16 @@
 
 namespace App\Livewire\Inventory;
 
-use Livewire\Component;
 use App\Models\InventoryMovement;
-use App\Models\ProductVariant;
 use App\Models\InventoryStock;
+use App\Models\ProductVariant;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
+use Livewire\Component;
 
 // ┌─────────────────────────────────────────────────────────────────────────────┐
 // │ CATATAN ARSITEKTUR STOK — MovementForm                                     │
@@ -29,15 +31,18 @@ use Illuminate\Support\Str;
 class MovementForm extends Component
 {
     public string $variant_id = '';
+
     public string $movement_type = 'adjustment_in';
-    public float  $quantity = 1;
+
+    public float $quantity = 1;
+
     public string $note = '';
 
     protected $rules = [
-        'variant_id'    => 'required|exists:product_variants,id',
+        'variant_id' => 'required|exists:product_variants,id',
         'movement_type' => 'required|in:adjustment_in,adjustment_out,write_off',
-        'quantity'      => 'required|numeric|min:0.01',
-        'note'          => 'nullable|string|max:500',
+        'quantity' => 'required|numeric|min:0.01',
+        'note' => 'nullable|string|max:500',
     ];
 
     protected $messages = [
@@ -51,17 +56,18 @@ class MovementForm extends Component
         $staff = Auth::user();
         $store = ($staff && method_exists($staff, 'getActiveStore')) ? $staff->getActiveStore() : null;
 
-        if (!$store) {
+        if (! $store) {
             $this->dispatch('toast', message: 'Toko aktif tidak ditemukan.', type: 'error');
+
             return;
         }
 
         // Tentukan arah pergerakan stok
-        $quantityChange = match($this->movement_type) {
-            'adjustment_in'  =>  abs($this->quantity),
+        $quantityChange = match ($this->movement_type) {
+            'adjustment_in' => abs($this->quantity),
             'adjustment_out',
-            'write_off'      => -abs($this->quantity),
-            default          =>  abs($this->quantity),
+            'write_off' => -abs($this->quantity),
+            default => abs($this->quantity),
         };
 
         try {
@@ -72,24 +78,24 @@ class MovementForm extends Component
                     ->lockForUpdate()
                     ->first();
 
-                if (!$stock) {
+                if (! $stock) {
                     // Buat entri stok baru jika belum ada (stok 0)
                     if ($quantityChange < 0) {
                         throw new \Exception('Stok produk ini belum ada di cabang ini.');
                     }
                     $stock = InventoryStock::create([
-                        'id'         => Str::uuid()->toString(),
+                        'id' => Str::uuid()->toString(),
                         'variant_id' => $this->variant_id,
-                        'store_id'   => $store->id,
-                        'quantity'   => 0,
+                        'store_id' => $store->id,
+                        'quantity' => 0,
                     ]);
                 }
 
                 $newQty = $stock->quantity + $quantityChange;
                 if ($newQty < 0) {
                     throw new \Exception(
-                        'Stok tidak mencukupi. Tersedia: ' . $stock->quantity .
-                        ', dikurangi: ' . abs($quantityChange)
+                        'Stok tidak mencukupi. Tersedia: '.$stock->quantity.
+                        ', dikurangi: '.abs($quantityChange)
                     );
                 }
 
@@ -98,23 +104,24 @@ class MovementForm extends Component
 
                 // Catat movement (manual — bukan dari trigger penjualan)
                 InventoryMovement::create([
-                    'id'              => Str::uuid()->toString(),
-                    'variant_id'      => $this->variant_id,
-                    'store_id'        => $store->id,
-                    'movement_type'   => $this->movement_type,
-                    'quantity_change'  => $quantityChange,
+                    'id' => Str::uuid()->toString(),
+                    'variant_id' => $this->variant_id,
+                    'store_id' => $store->id,
+                    'movement_type' => $this->movement_type,
+                    'quantity_change' => $quantityChange,
                     'reference_table' => 'manual',
-                    'reference_id'    => null,
-                    'staff_id'        => $staff->id,
-                    'note'            => $this->note ?: 'Penyesuaian stok manual oleh ' . $staff->full_name,
+                    'reference_id' => null,
+                    'staff_id' => $staff->id,
+                    'note' => $this->note ?: 'Penyesuaian stok manual oleh '.$staff->full_name,
                 ]);
             });
 
             $this->dispatch('toast', message: 'Penyesuaian stok berhasil dicatat.', type: 'success');
+
             return $this->redirect(route('inventory.movements'), navigate: true);
 
         } catch (\Exception $e) {
-            Log::error('MovementForm: Gagal catat stok: ' . $e->getMessage());
+            Log::error('MovementForm: Gagal catat stok: '.$e->getMessage());
             $this->addError('quantity', $e->getMessage());
         }
     }
@@ -133,11 +140,11 @@ class MovementForm extends Component
                 'title' => 'Tambah Pergerakan',
                 'breadcrumbs' => [
                     ['label' => 'Dashboard', 'route' => route('dashboard')],
-                    ['label' => 'Pergerakan Stok']
+                    ['label' => 'Pergerakan Stok'],
                 ],
-                'actions' => new \Illuminate\Support\HtmlString(\Illuminate\Support\Facades\Blade::render(
+                'actions' => new HtmlString(Blade::render(
                     '<x-ui.button variant="ghost" icon="arrow-left" href="{{ route(\'inventory.movements\') }}" wire:navigate>Kembali</x-ui.button>'
-                ))
+                )),
             ]);
     }
 }

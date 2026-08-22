@@ -2,10 +2,12 @@
 
 namespace App\Livewire\Catalog;
 
+use App\Models\Category;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\HtmlString;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Models\Category;
-use Illuminate\Support\Facades\Log;
 
 class CategoryIndex extends Component
 {
@@ -26,10 +28,10 @@ class CategoryIndex extends Component
             $category = Category::findOrFail($id);
             // TODO: Tambahkan validasi pengecekan apakah kategori sedang digunakan oleh produk
             $category->delete();
-            \App\Models\Category::clearActiveCache();
+            Category::clearActiveCache();
             $this->dispatch('toast', message: 'Kategori berhasil dihapus.', type: 'success');
         } catch (\Exception $e) {
-            Log::error('Gagal menghapus kategori: ' . $e->getMessage());
+            Log::error('Gagal menghapus kategori: '.$e->getMessage());
             $this->dispatch('toast', message: 'Gagal menghapus kategori.', type: 'error');
         }
     }
@@ -37,24 +39,22 @@ class CategoryIndex extends Component
     public function render()
     {
         // Supabase uses PostgreSQL, so ilike is safe and case-insensitive
-        $categories = Category::where('name', 'ilike', '%' . $this->search . '%')
+        $categories = Category::where('name', 'ilike', '%'.$this->search.'%')
             ->orderBy('name')
             ->paginate(10);
 
         return view('livewire.catalog.category-index', [
-            'categories' => $categories
+            'categories' => $categories,
         ])->layout('components.layouts.app', [
             'title' => 'Kategori Produk',
             'breadcrumbs' => [
                 ['label' => 'Dashboard', 'route' => route('dashboard')],
                 ['label' => 'Katalog Produk', 'route' => route('catalog.products')],
-                ['label' => 'Kategori']
+                ['label' => 'Kategori'],
             ],
-            'actions' => new \Illuminate\Support\HtmlString(\Illuminate\Support\Facades\Blade::render(
-                '<x-ui.button variant="primary" icon="plus" wire:click="$dispatch(\'editCategory\')">Tambah Kategori</x-ui.button>'
-            ))
+            'actions' => new HtmlString(Blade::render(
+                '<x-ui.button variant="primary" icon="plus" x-data x-on:click="$dispatch(\'editCategory\')">Tambah Kategori</x-ui.button>'
+            )),
         ]);
     }
 }
-
-

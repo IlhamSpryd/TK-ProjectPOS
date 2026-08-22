@@ -2,16 +2,19 @@
 
 namespace App\Livewire\Catalog;
 
-use Livewire\Component;
 use App\Models\Category;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Livewire\Component;
 
 class CategoryForm extends Component
 {
     public ?string $categoryId = null;
+
     public string $name = '';
+
     public ?string $parent_id = null;
+
     public bool $active = true;
 
     protected $listeners = ['editCategory' => 'loadCategory'];
@@ -26,7 +29,7 @@ class CategoryForm extends Component
     {
         $this->resetValidation();
         $this->reset(['name', 'parent_id', 'active']);
-        
+
         $this->categoryId = $id;
 
         if ($this->categoryId) {
@@ -65,10 +68,10 @@ class CategoryForm extends Component
 
             $this->dispatch('categorySaved');
             $this->dispatch('close-category-modal');
-            \App\Models\Category::clearActiveCache();
+            Category::clearActiveCache();
             $this->dispatch('toast', message: $message, type: 'success');
         } catch (\Exception $e) {
-            Log::error('Gagal menyimpan kategori: ' . $e->getMessage());
+            Log::error('Gagal menyimpan kategori: '.$e->getMessage());
             $this->dispatch('toast', message: 'Gagal menyimpan kategori.', type: 'error');
         }
     }
@@ -83,8 +86,7 @@ class CategoryForm extends Component
             ->get();
 
         return view('livewire.catalog.category-form', [
-            'parentCategories' => $parentCategories
+            'parentCategories' => $parentCategories,
         ]);
     }
 }
-

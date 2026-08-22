@@ -2,19 +2,25 @@
 
 namespace App\Livewire\Customers;
 
-use Livewire\Component;
 use App\Models\Customer;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Livewire\Component;
 
 class Form extends Component
 {
     public ?string $customerId = null;
+
     public string $name = '';
+
     public ?string $email = null;
+
     public ?string $phone = null;
+
     public ?string $address = null;
+
     public ?string $npwp = null;
+
     public bool $active = true;
 
     protected $listeners = ['editCustomer' => 'loadCustomer'];
@@ -32,7 +38,7 @@ class Form extends Component
     {
         $this->resetValidation();
         $this->reset(['name', 'email', 'phone', 'address', 'npwp', 'active']);
-        
+
         $this->customerId = $id;
 
         if ($this->customerId) {
@@ -81,7 +87,7 @@ class Form extends Component
             $this->dispatch('close-customer-modal');
             $this->dispatch('toast', message: $message, type: 'success');
         } catch (\Exception $e) {
-            Log::error('Gagal menyimpan pelanggan: ' . $e->getMessage());
+            Log::error('Gagal menyimpan pelanggan: '.$e->getMessage());
             $this->dispatch('toast', message: 'Gagal menyimpan pelanggan.', type: 'error');
         }
     }
@@ -91,5 +97,3 @@ class Form extends Component
         return view('livewire.customers.form');
     }
 }
-
-

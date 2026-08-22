@@ -2,27 +2,40 @@
 
 namespace App\Livewire\Stores;
 
-use Livewire\Component;
 use App\Models\Store;
 use App\Models\TaxCategory;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Livewire\Component;
 
 class Form extends Component
 {
     public ?string $storeId = null;
+
     public string $name = '';
+
     public ?string $business_type = null;
+
     public bool $is_pkp = false;
+
     public ?string $npwp = null;
+
     public ?string $address = null;
+
     public ?string $city = null;
+
     public ?string $province = null;
+
     public ?string $phone = null;
+
     public ?string $email = null;
+
     public string $currency = 'IDR';
+
     public string $timezone = 'Asia/Jakarta';
+
     public bool $active = true;
+
     public ?string $default_tax_category_id = null;
 
     protected $listeners = ['editStore' => 'loadStore'];
@@ -40,21 +53,21 @@ class Form extends Component
         'currency' => 'required|string|max:3',
         'timezone' => 'required|string|max:100',
         'active' => 'boolean',
-        'default_tax_category_id' => 'nullable|exists:tax_categories,id'
+        'default_tax_category_id' => 'nullable|exists:tax_categories,id',
     ];
 
     public function loadStore($id = null)
     {
         $this->resetValidation();
         $this->reset([
-            'name', 'business_type', 'is_pkp', 'npwp', 'address', 'city', 
-            'province', 'phone', 'email', 'currency', 'timezone', 'active', 'default_tax_category_id'
+            'name', 'business_type', 'is_pkp', 'npwp', 'address', 'city',
+            'province', 'phone', 'email', 'currency', 'timezone', 'active', 'default_tax_category_id',
         ]);
-        
+
         $this->currency = 'IDR';
         $this->timezone = 'Asia/Jakarta';
         $this->active = true;
-        
+
         $this->storeId = $id;
 
         if ($this->storeId) {
@@ -125,7 +138,7 @@ class Form extends Component
             $this->dispatch('close-store-modal');
             $this->dispatch('toast', message: $message, type: 'success');
         } catch (\Exception $e) {
-            Log::error('Gagal menyimpan cabang: ' . $e->getMessage());
+            Log::error('Gagal menyimpan cabang: '.$e->getMessage());
             $this->dispatch('toast', message: 'Gagal menyimpan cabang.', type: 'error');
         }
     }
@@ -133,10 +146,9 @@ class Form extends Component
     public function render()
     {
         $taxCategories = TaxCategory::activeCached();
+
         return view('livewire.stores.form', [
-            'taxCategories' => $taxCategories
+            'taxCategories' => $taxCategories,
         ]);
     }
 }
-
-

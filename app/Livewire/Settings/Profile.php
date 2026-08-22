@@ -44,8 +44,6 @@ class Profile extends Component
             'email' => $validated['email'],
         ]);
 
-
-
         $user->save();
 
         Flux::toast(variant: 'success', text: __('Profile updated.'));
@@ -93,8 +91,8 @@ class Profile extends Component
             'title' => 'Pengaturan',
             'breadcrumbs' => [
                 ['label' => 'Dashboard', 'route' => route('dashboard')],
-                ['label' => 'Pengaturan']
-            ]
+                ['label' => 'Pengaturan'],
+            ],
         ]);
     }
 }

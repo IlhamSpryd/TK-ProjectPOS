@@ -1,4 +1,4 @@
-<div class="py-6">
+<div class="py-6" x-on:trigger-save-staff.window="$wire.save()">
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 space-y-6">

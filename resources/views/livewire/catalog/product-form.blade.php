@@ -1,4 +1,4 @@
-<div>
+<div x-on:trigger-save-product.window="$wire.save()">
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="col-span-2 space-y-6">
