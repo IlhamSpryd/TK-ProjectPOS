@@ -42,6 +42,8 @@ class CategoryIndex extends Component
 
         return view('livewire.catalog.category-index', [
             'categories' => $categories
-        ])->layout('layouts.app');
+        ]);
     }
 }
+
+

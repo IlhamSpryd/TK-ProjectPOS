@@ -1,9 +1,10 @@
+<x-layouts.app title="Katalog Produk" :breadcrumbs="[['label' => 'Dashboard', 'route' => route('dashboard')], ['label' => 'Katalog Produk']]">
 <div class="py-6">
-    <x-ui.page-header title="Produk" description="Kelola daftar produk dan varian yang tersedia di sistem kasir Anda.">
+    <x-slot:actions>
         <x-ui.button variant="primary" icon="plus" href="{{ route('catalog.products.create') }}" wire:navigate>
             Tambah Produk
         </x-ui.button>
-    </x-ui.page-header>
+    </x-slot:actions>
 
     <x-ui.card class="p-0 overflow-hidden border-neutral-200">
         <div class="p-4 border-b border-neutral-200 bg-neutral-50/50">
@@ -63,10 +64,7 @@
                 </x-ui.table.tr>
             @empty
                 <x-slot:empty>
-                    <div class="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center mb-3 border border-neutral-200 mx-auto">
-                        <flux:icon.cube class="w-8 h-8 text-neutral-400" />
-                    </div>
-                    <p class="font-medium text-neutral-500">Tidak ada produk ditemukan.</p>
+                    <x-ui.empty-state icon="cube" title="Tidak ada produk" description="Coba ubah kata kunci pencarian atau tambah produk baru." />
                 </x-slot:empty>
             @endforelse
             
@@ -78,3 +76,4 @@
         </x-ui.table>
     </x-ui.card>
 </div>
+</x-layouts.app>

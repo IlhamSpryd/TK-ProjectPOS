@@ -1,9 +1,10 @@
+<x-layouts.app title="Kategori Produk" :breadcrumbs="[['label' => 'Dashboard', 'route' => route('dashboard')], ['label' => 'Kategori Produk']]">
 <div class="py-6">
-    <x-ui.page-header title="Kategori Produk" description="Kelola daftar kategori untuk mengelompokkan produk Anda.">
+    <x-slot:actions>
         <x-ui.button variant="primary" icon="plus" wire:click="$dispatch('editCategory')">
             Tambah Kategori
         </x-ui.button>
-    </x-ui.page-header>
+    </x-slot:actions>
 
     <x-ui.card class="p-0 overflow-hidden border-neutral-200">
         <div class="p-4 border-b border-neutral-200 bg-neutral-50/50">
@@ -45,10 +46,7 @@
                 </x-ui.table.tr>
             @empty
                 <x-slot:empty>
-                    <div class="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center mb-3 border border-neutral-200 mx-auto">
-                        <flux:icon.tag class="w-8 h-8 text-neutral-400" />
-                    </div>
-                    <p class="font-medium text-neutral-500">Tidak ada kategori ditemukan.</p>
+                    <x-ui.empty-state icon="tag" title="Tidak ada kategori" description="Belum ada kategori yang dibuat atau sesuai pencarian." />
                 </x-slot:empty>
             @endforelse
             
@@ -75,3 +73,5 @@
         });
     </script>
 </div>
+</x-layouts.app>
+

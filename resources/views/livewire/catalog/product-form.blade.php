@@ -1,10 +1,11 @@
+<x-layouts.app :title="$productId ? 'Edit Produk' : 'Tambah Produk Baru'" :breadcrumbs="[['label' => 'Dashboard', 'route' => route('dashboard')], ['label' => 'Katalog Produk', 'route' => route('catalog.products')], ['label' => $productId ? 'Edit' : 'Tambah']]">
 <div class="py-6">
-    <x-ui.page-header title="{{ $productId ? 'Edit Produk' : 'Tambah Produk Baru' }}" description="Masukkan informasi produk dan kelola variannya.">
+    <x-slot:actions>
         <x-ui.button variant="ghost" href="{{ route('catalog.products') }}" wire:navigate class="px-5">Batal</x-ui.button>
         <x-ui.button variant="primary" wire:click="save" class="px-6 shadow-xs">
             Simpan Produk
         </x-ui.button>
-    </x-ui.page-header>
+    </x-slot:actions>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="col-span-2 space-y-6">
@@ -196,3 +197,5 @@
         </div>
     </div>
 </div>
+</x-layouts.app>
+

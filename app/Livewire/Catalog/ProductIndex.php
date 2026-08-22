@@ -39,8 +39,6 @@ class ProductIndex extends Component
             ->orderBy('name')
             ->paginate(10);
 
-        return view('livewire.catalog.product-index', [
-            'products' => $products
-        ])->layout('layouts.app');
+        return view('livewire.catalog.product-index', compact('products'));
     }
 }
