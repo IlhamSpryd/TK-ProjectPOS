@@ -6,6 +6,7 @@ use Livewire\Component;
 use App\Models\Sale;
 use App\Models\ProductVariant;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class Dashboard extends Component
@@ -32,20 +33,32 @@ class Dashboard extends Component
 
         $activeProducts = ProductVariant::where('active', true)->count();
 
-        // 7-day revenue trend for chart (P-10)
+        // 7-day revenue trend for chart (P-10) - Optimized 1 Query GROUP BY
         $chartData = [];
         $chartLabels = [];
+        
         if ($storeId) {
-            $last7Days = collect(range(6, 0))->map(function ($days) {
-                return Carbon::today()->subDays($days);
-            });
+            $startDate = Carbon::today()->subDays(6);
+            $endDate = Carbon::today()->endOfDay();
             
-            foreach ($last7Days as $date) {
-                $chartLabels[] = $date->format('d/m');
-                $dailyRevenue = Sale::where('store_id', $storeId)
-                    ->whereDate('created_at', $date)
-                    ->sum('grand_total');
-                $chartData[] = $dailyRevenue;
+            // Get data in single query grouped by date
+            $salesData = Sale::where('store_id', $storeId)
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->select(
+                    DB::raw('DATE(created_at) as date'),
+                    DB::raw('SUM(grand_total) as total')
+                )
+                ->groupBy('date')
+                ->pluck('total', 'date')
+                ->toArray();
+                
+            // Fill arrays ensuring all 7 days are represented
+            for ($i = 6; $i >= 0; $i--) {
+                $dateObj = Carbon::today()->subDays($i);
+                $dateStr = $dateObj->format('Y-m-d');
+                
+                $chartLabels[] = $dateObj->format('d/m');
+                $chartData[] = $salesData[$dateStr] ?? 0;
             }
         }
 
@@ -56,6 +69,7 @@ class Dashboard extends Component
             'store' => $store,
             'chartLabels' => $chartLabels,
             'chartData' => $chartData
-        ])->layout('layouts.app');
+        ]);
     }
 }
+
