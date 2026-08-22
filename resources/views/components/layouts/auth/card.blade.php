@@ -3,7 +3,7 @@
     <head>
         @include('partials.head')
     </head>
-    <body class="min-h-screen bg-zinc-50 antialiased dark:bg-linear-to-b dark:from-zinc-950 dark:to-zinc-900">
+    <body class="min-h-screen bg-neutral-50 antialiased dark:bg-linear-to-b dark:from-neutral-950 dark:to-neutral-900">
         <div class="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
             <div class="flex w-full max-w-md flex-col gap-6">
                 <a href="{{ route('home') }}" class="flex flex-col items-center gap-2 font-medium" wire:navigate>
@@ -15,7 +15,7 @@
                 </a>
 
                 <div class="flex flex-col gap-6">
-                    <div class="rounded-xl border bg-white dark:bg-zinc-950 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 shadow-xs">
+                    <div class="rounded-xl border bg-white dark:bg-neutral-950 dark:border-neutral-800 text-neutral-800 dark:text-neutral-200 shadow-xs">
                         <div class="px-10 py-8">{{ $slot }}</div>
                     </div>
                 </div>

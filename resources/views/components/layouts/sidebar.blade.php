@@ -65,19 +65,23 @@
          x-data="{ currentPath: window.location.pathname }">
         <div class="flex flex-col w-full space-y-1">
             @php
+                $user = auth('web')->user();
+                $isSuperAdmin = $user && method_exists($user, 'isSuperAdmin') ? $user->isSuperAdmin() : false;
+                
                 $navItems = [
                     ['url' => route('dashboard'), 'match' => 'dashboard', 'label' => 'Dashboard', 'icon' => '<rect x="3" y="3" width="7" height="9" rx="1"></rect><rect x="14" y="3" width="7" height="5" rx="1"></rect><rect x="14" y="12" width="7" height="9" rx="1"></rect><rect x="3" y="16" width="7" height="5" rx="1"></rect>', 'visible' => true],
-                    ['url' => route('pos'), 'match' => 'pos', 'label' => 'Kasir / POS', 'icon' => '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><line x1="9" y1="10" x2="15" y2="10"></line><line x1="9" y1="14" x2="15" y2="14"></line><line x1="9" y1="18" x2="13" y2="18"></line>', 'visible' => true],
-                    ['url' => route('catalog.products'), 'match' => 'catalog/products', 'label' => 'Katalog Produk', 'icon' => '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line>', 'visible' => true],
-                    ['url' => route('catalog.categories'), 'match' => 'catalog/categories', 'label' => 'Kategori', 'icon' => '<path d="M20 6H4l2 12h12l2-12z"></path><path d="M10 12l2-2 2 2"></path>', 'visible' => true],
+                    ['url' => route('pos'), 'match' => 'pos', 'label' => 'Kasir / POS', 'icon' => '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><line x1="9" y1="10" x2="15" y2="10"></line><line x1="9" y1="14" x2="15" y2="14"></line><line x1="9" y1="18" x2="13" y2="18"></line>', 'visible' => $isSuperAdmin || ($user && $user->hasPermission('pos_access'))],
+                    ['url' => route('catalog.products'), 'match' => 'catalog/products', 'label' => 'Katalog Produk', 'icon' => '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line>', 'visible' => $isSuperAdmin || ($user && $user->hasPermission('manage_catalog'))],
+                    ['url' => route('catalog.categories'), 'match' => 'catalog/categories', 'label' => 'Kategori', 'icon' => '<path d="M20 6H4l2 12h12l2-12z"></path><path d="M10 12l2-2 2 2"></path>', 'visible' => $isSuperAdmin || ($user && $user->hasPermission('manage_catalog'))],
                 ];
                 $managementItems = [
-                    ['url' => route('customers'), 'match' => 'customers', 'label' => 'Pelanggan', 'icon' => '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path>', 'visible' => true],
-                    ['url' => route('stores'), 'match' => 'stores', 'label' => 'Cabang', 'icon' => '<rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><path d="M9 22v-4h6v4"></path><path d="M8 6h.01"></path><path d="M16 6h.01"></path><path d="M12 6h.01"></path><path d="M12 10h.01"></path><path d="M12 14h.01"></path><path d="M16 10h.01"></path><path d="M16 14h.01"></path><path d="M8 10h.01"></path><path d="M8 14h.01"></path>', 'visible' => true],
-                    ['url' => route('reports'), 'match' => 'reports', 'label' => 'Laporan', 'icon' => '<line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line>', 'visible' => true],
+                    ['url' => route('inventory.movements'), 'match' => 'inventori*', 'label' => 'Inventaris', 'icon' => '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line>', 'visible' => $isSuperAdmin || ($user && $user->hasPermission('manage_inventory'))],
+                    ['url' => route('customers'), 'match' => 'customers', 'label' => 'Pelanggan', 'icon' => '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path>', 'visible' => $isSuperAdmin || ($user && $user->hasPermission('manage_customers'))],
+                    ['url' => route('stores'), 'match' => 'stores', 'label' => 'Cabang', 'icon' => '<rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><path d="M9 22v-4h6v4"></path><path d="M8 6h.01"></path><path d="M16 6h.01"></path><path d="M12 6h.01"></path><path d="M12 10h.01"></path><path d="M12 14h.01"></path><path d="M16 10h.01"></path><path d="M16 14h.01"></path><path d="M8 10h.01"></path><path d="M8 14h.01"></path>', 'visible' => $isSuperAdmin || ($user && $user->hasPermission('manage_stores'))],
+                    ['url' => route('reports'), 'match' => 'reports', 'label' => 'Laporan', 'icon' => '<line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line>', 'visible' => $isSuperAdmin || ($user && $user->hasPermission('view_reports'))],
                 ];
                 $accountItems = [
-                    ['url' => route('staff.index'), 'match' => 'staff', 'label' => 'Daftar Staff', 'icon' => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" y1="8" x2="19" y2="14"></line><line x1="22" y1="11" x2="16" y2="11"></line>', 'visible' => true],
+                    ['url' => route('staff.index'), 'match' => 'staff', 'label' => 'Daftar Staff', 'icon' => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" y1="8" x2="19" y2="14"></line><line x1="22" y1="11" x2="16" y2="11"></line>', 'visible' => $isSuperAdmin || ($user && $user->hasPermission('manage_staff'))],
                     ['url' => route('profile.edit'), 'match' => 'profile', 'label' => 'Pengaturan Profil', 'icon' => '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>', 'visible' => true],
                     ['url' => route('security.edit'), 'match' => 'security', 'label' => 'Keamanan', 'icon' => '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>', 'visible' => true],
                 ];
@@ -164,72 +168,7 @@
         </div>
     </nav>
 
-    <div x-data="{ profileMenuOpen: false }"
-         @click.outside="profileMenuOpen = false"
-         @keydown.escape.window="profileMenuOpen = false"
-         class="relative border-t border-neutral-100">
-
-         <div id="profile-menu"
-              role="menu"
-              x-show="profileMenuOpen"
-              x-transition:enter="transition ease-out duration-200"
-              x-transition:enter-start="opacity-0 scale-95"
-              x-transition:enter-end="opacity-100 scale-100"
-              x-transition:leave="transition ease-in duration-150"
-              x-transition:leave-start="opacity-100 scale-100"
-              x-transition:leave-end="opacity-0 scale-95"
-              x-cloak
-              class="absolute bottom-full mb-2 bg-white border border-neutral-200 rounded-xl shadow-lg overflow-hidden z-50"
-              :class="sidebarOpen ? 'left-3 right-3' : 'left-14 ml-2 w-56 md:left-full md:ml-2'">
-
-             @php
-                 $user = auth('web')->user();
-                 $userName = $user ? $user->full_name : 'Admin';
-                 $userEmail = $user ? $user->email : '';
-                 $initial = $user ? $user->initials() : 'A';
-             @endphp
-
-             <div class="px-3 py-2.5 border-b border-neutral-100">
-                 <p class="text-[12px] text-neutral-500 truncate">{{ $userEmail }}</p>
-             </div>
-
-             <div class="py-1">
-                 <a href="{{ route('profile.edit') }}" role="menuitem" class="flex items-center gap-2.5 px-3 py-2 text-[13px] text-neutral-700 hover:bg-neutral-50 transition-colors" wire:navigate.hover>
-                     <svg class="w-[16px] h-[16px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>
-                     </svg>
-                     Pengaturan Profil
-                 </a>
-
-                 <div class="border-t border-neutral-100 my-1"></div>
-
-                 <form method="POST" action="{{ route('logout') }}" class="m-0">
-                     @csrf
-                     <button type="submit" role="menuitem" class="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-neutral-700 hover:bg-neutral-50 transition-colors text-left">
-                         <svg class="w-[16px] h-[16px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
-                         </svg>
-                         Keluar
-                     </button>
-                 </form>
-             </div>
-         </div>
-
-         <button type="button"
-                 @click="profileMenuOpen = !profileMenuOpen"
-                 aria-haspopup="true"
-                 aria-controls="profile-menu"
-                 :aria-expanded="profileMenuOpen.toString()"
-                 class="w-full p-3 flex items-center text-left group transition-colors duration-200 hover:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:outline-none">
-             <div class="flex items-center">
-             <div class="w-8 h-8 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200 flex items-center justify-center font-medium text-[13px] shrink-0 mx-auto md:mx-0">
-                {{ $initial }}
-             </div>
-             <div :class="sidebarOpen ? 'opacity-100 w-auto ml-3' : 'opacity-0 w-0 ml-0'" class="transition-all duration-200 overflow-hidden whitespace-nowrap hidden md:block">
-                 <p class="text-[13px] font-medium text-neutral-900 leading-tight">{{ $userName }}</p>
-                 <p class="text-[11px] text-neutral-500 leading-tight mt-0.5 capitalize">Staff</p>
-             </div>
-         </div>
-         </button>
+    <div class="relative border-t border-neutral-100 p-2">
+        <x-desktop-user-menu position="top" align="start" />
     </div>
 </aside>

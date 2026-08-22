@@ -1,7 +1,9 @@
-<flux:dropdown position="bottom" align="start">
+@props(['position' => 'bottom', 'align' => 'start'])
+
+<flux:dropdown :position="$position" :align="$align">
     <flux:sidebar.profile
         :name="auth()->user()->full_name ?? auth()->user()->name"
-        :subtitle="auth()->user()->role->name ?? auth()->user()->email ?? 'Staff'"
+        :subtitle="auth()->user()->role?->name ?? auth()->user()->email ?? 'Staff'"
         :initials="auth()->user()->initials()"
         icon:trailing="chevrons-up-down"
         data-test="sidebar-menu-button"
@@ -15,7 +17,7 @@
             />
             <div class="grid flex-1 text-start text-sm leading-tight">
                 <flux:heading class="truncate">{{ auth()->user()->full_name ?? auth()->user()->name }}</flux:heading>
-                <flux:text class="truncate">{{ auth()->user()->role->name ?? auth()->user()->email ?? 'Staff' }}</flux:text>
+                <flux:text class="truncate">{{ auth()->user()->role?->name ?? auth()->user()->email ?? 'Staff' }}</flux:text>
             </div>
         </div>
         <flux:menu.separator />

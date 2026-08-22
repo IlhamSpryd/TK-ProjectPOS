@@ -1,3 +1,4 @@
+{{-- UNUSED: Kept for reference. Navigation is built-in inside components/layouts/sidebar.blade.php --}}
 @php
 $navItems = [
     ['name' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'squares-2x2'],

@@ -3,6 +3,7 @@
 namespace App\Livewire\Catalog;
 
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Category;
@@ -12,6 +13,8 @@ use Illuminate\Support\Facades\Log;
 
 class ProductForm extends Component
 {
+    use WithFileUploads;
+
     public ?string $productId = null;
 
     // Product fields
@@ -23,6 +26,9 @@ class ProductForm extends Component
     public bool $track_stock = true;
     public bool $is_service = false;
     public bool $active = true;
+
+    public $image;
+    public ?string $existingImage = null;
 
     // Variants array
     public array $variants = [];
@@ -41,6 +47,7 @@ class ProductForm extends Component
             $this->track_stock = $product->track_stock;
             $this->is_service = $product->is_service;
             $this->active = $product->active;
+            $this->existingImage = $product->image_url;
 
             foreach ($product->variants as $variant) {
                 $this->variants[] = [
@@ -89,6 +96,7 @@ class ProductForm extends Component
             'sku' => 'nullable|string|max:100',
             'category_id' => 'nullable|string|exists:categories,id',
             'unit' => 'nullable|string|max:50',
+            'image' => 'nullable|image|max:2048', // Max 2MB
             'variants.*.selling_price' => 'required|numeric|min:0',
             'variants.*.cost_price' => 'nullable|numeric|min:0',
         ];
@@ -108,9 +116,20 @@ class ProductForm extends Component
         try {
             DB::beginTransaction();
 
+            $imagePath = null;
+            if ($this->image) {
+                Log::info("Image property is set. Temp path: " . $this->image->getRealPath());
+                $imagePath = $this->image->store('products', 'public');
+                Log::info("Stored at: " . $imagePath);
+            } else {
+                Log::info("Image property is NOT set during save().");
+            }
+
             if ($this->productId) {
                 $product = Product::findOrFail($this->productId);
-                $product->update([
+                Log::info("Found product: " . $product->id);
+                
+                $updateData = [
                     'name' => $this->name,
                     'sku' => $this->sku,
                     'category_id' => $this->category_id ?: null,
@@ -119,7 +138,21 @@ class ProductForm extends Component
                     'track_stock' => $this->track_stock,
                     'is_service' => $this->is_service,
                     'active' => $this->active,
-                ]);
+                ];
+                
+                if ($imagePath) {
+                    $updateData['image_url'] = $imagePath;
+                    Log::info("Added image_url to updateData: " . $imagePath);
+                }
+
+                $product->update($updateData);
+                
+                if ($imagePath) {
+                    \Illuminate\Support\Facades\DB::table('products')->where('id', $product->id)->update(['image_url' => $imagePath]);
+                    Log::info("Forced update image_url via DB facade.");
+                }
+                
+                Log::info("Updated product.");
             } else {
                 $product = Product::create([
                     'id' => Str::uuid()->toString(),
@@ -131,6 +164,7 @@ class ProductForm extends Component
                     'track_stock' => $this->track_stock,
                     'is_service' => $this->is_service,
                     'active' => $this->active,
+                    'image_url' => $imagePath,
                 ]);
                 $this->productId = $product->id;
             }

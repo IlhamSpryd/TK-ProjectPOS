@@ -57,15 +57,13 @@ class Staff extends Authenticatable
 
     public function hasPermission(string $permission): bool
     {
-        if (!$this->role) return false;
-        
-        $permissions = $this->role->permissions ?? [];
+        $permissions = $this->role?->permissions ?? [];
         return in_array($permission, $permissions);
     }
 
     public function isSuperAdmin(): bool
     {
-        return $this->role && $this->role->name === 'Super Admin';
+        return $this->role?->name === 'Super Admin';
     }
 
     protected $cachedActiveStore = false;

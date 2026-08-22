@@ -70,7 +70,8 @@ class PosScreen extends Component
                 'price' => $variant->selling_price,
                 'quantity' => 1,
                 'stock' => $stock,
-                'discount' => 0
+                'discount' => 0,
+                'image_url' => $variant->product->image_url
             ];
         }
 

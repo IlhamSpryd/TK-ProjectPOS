@@ -113,6 +113,40 @@
         </div>
 
         <div class="space-y-6">
+            <!-- Foto Produk -->
+            <x-ui.card class="relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-cyan-500"></div>
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                        <flux:icon.photo class="w-5 h-5" />
+                    </div>
+                    <h2 class="text-h3 font-semibold text-neutral-800">Foto Produk</h2>
+                </div>
+                
+                <div class="space-y-4">
+                    @if ($image)
+                        <div class="w-full h-48 bg-neutral-100 rounded-xl overflow-hidden border border-neutral-200">
+                            <img src="{{ $image->temporaryUrl() }}" class="w-full h-full object-cover">
+                        </div>
+                    @elseif ($existingImage)
+                        <div class="w-full h-48 bg-neutral-100 rounded-xl overflow-hidden border border-neutral-200">
+                            <img src="{{ Storage::url($existingImage) }}" class="w-full h-full object-cover">
+                        </div>
+                    @else
+                        <div class="w-full h-48 bg-neutral-50 rounded-xl border border-dashed border-neutral-300 flex flex-col items-center justify-center text-neutral-400">
+                            <flux:icon.photo class="w-10 h-10 mb-2 opacity-50" />
+                            <span class="text-sm">Belum ada foto</span>
+                        </div>
+                    @endif
+
+                    <div>
+                        <input type="file" wire:model="image" id="product_image" class="block w-full text-sm text-neutral-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 cursor-pointer border border-neutral-200 rounded-md bg-white">
+                        <div wire:loading wire:target="image" class="text-xs text-primary-600 mt-2 font-medium">Mengunggah foto...</div>
+                        <flux:error name="image" />
+                    </div>
+                </div>
+            </x-ui.card>
+
             <!-- Pengaturan Lanjutan -->
             <x-ui.card class="relative overflow-hidden sticky top-24">
                 <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-pink-500"></div>

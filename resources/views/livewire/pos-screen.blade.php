@@ -144,9 +144,16 @@
                             </button>
 
                             <div class="flex justify-between items-start mb-2">
-                                <div class="pr-2">
-                                    <h4 class="text-[13px] font-medium text-neutral-800 leading-snug">{{ $item['name'] }}</h4>
-                                    <p class="text-[12px] font-medium text-neutral-500 mt-0.5">Rp {{ number_format($item['price'], 0, ',', '.') }}</p>
+                                <div class="flex items-center gap-2 pr-2">
+                                    @if(isset($item['image_url']) && $item['image_url'])
+                                        <div class="w-10 h-10 rounded bg-neutral-100 flex-shrink-0 overflow-hidden border border-neutral-200">
+                                            <img src="{{ Storage::url($item['image_url']) }}" alt="{{ $item['name'] }}" class="w-full h-full object-cover">
+                                        </div>
+                                    @endif
+                                    <div>
+                                        <h4 class="text-[13px] font-medium text-neutral-800 leading-snug">{{ $item['name'] }}</h4>
+                                        <p class="text-[12px] font-medium text-neutral-500 mt-0.5">Rp {{ number_format($item['price'], 0, ',', '.') }}</p>
+                                    </div>
                                 </div>
                             </div>
                             
