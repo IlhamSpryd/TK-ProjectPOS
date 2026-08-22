@@ -80,5 +80,11 @@
                 </x-slot:empty>
             @endforelse
         </x-ui.table>
+        
+        @if($sales->hasPages())
+            <div class="p-4 border-t border-neutral-200">
+                {{ $sales->links() }}
+            </div>
+        @endif
     </x-ui.card>
 </div>

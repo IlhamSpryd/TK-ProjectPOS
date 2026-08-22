@@ -9,7 +9,9 @@ use App\Models\Sale;
 use App\Services\SaleService;
 use Exception;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Livewire\WithPagination;
+use Livewire\Attributes\Computed;
 
 class PosScreen extends Component
 {
@@ -52,7 +54,7 @@ class PosScreen extends Component
         } else {
             // Get stock for active store
             $staff = Auth::user();
-            $store = $this->getActiveStore($staff);
+            $store = $staff ? $staff->getActiveStore() : null;
             
             $stock = 0;
             if ($store) {
@@ -137,7 +139,7 @@ class PosScreen extends Component
     public function updatedPaymentMethod()
     {
         if ($this->payment_method !== 'cash') {
-            $this->cash_received = $this->getGrandTotalProperty();
+            $this->cash_received = $this->grandTotal();
         }
         $this->calculateTotals();
     }
@@ -156,7 +158,7 @@ class PosScreen extends Component
                 'cart' => $this->cart,
                 'customer_id' => $this->customer_id,
                 'payment_method' => $this->payment_method,
-                'cash_received' => $this->payment_method === 'cash' ? (float) $this->cash_received : $this->getGrandTotalProperty(),
+                'cash_received' => $this->payment_method === 'cash' ? (float) $this->cash_received : $this->grandTotal(),
                 'notes' => ''
             ];
 
@@ -200,26 +202,22 @@ class PosScreen extends Component
         return collect($this->cart)->sum('discount');
     }
 
-    public function getTaxTotalProperty()
+    #[Computed]
+    public function taxTotal()
     {
-        // Simplifikasi: hitung berdasarkan store default tax jika ada, tapi karena di Livewire kita harus tahu ratenya
-        // Kita hitung secara kasar di UI, tapi yang akurat di backend (SaleService).
-        // Untuk tampilan, mari kita ambil PPN 11% secara default jika belum tahu. 
-        // Tapi mari pastikan ini tidak perlu tampil akurat tax per item sebelum proses jika susah. 
-        // Kita fetch secara realtime logic di cart atau biarkan 0 dulu dan hitung tax di backend.
-        // Di sini kita asumsi tax 11% untuk contoh, idealnya fetch dari product.
-        // Mari kita buat 0 dulu, akan lebih presisi jika tax dihitung per baris seperti di logic service.
         $tax = 0;
         
         $staff = Auth::user();
         if(!$staff) return 0;
         
-        $store = $this->getActiveStore($staff);
+        $store = $staff->getActiveStore();
         if(!$store) return 0;
         
         // Batch load tax categories to fix N+1
         $taxCategoryIds = collect($this->cart)
             ->map(function ($item, $variantId) use ($store) {
+                // Gunakan static query atau pastikan variant di-cache jika memungkinkan. 
+                // Di sini kita fetch ulang ringan, atau idealnya variant data sudah ada di cart.
                 $variant = ProductVariant::with(['product'])->find($variantId);
                 return $variant->product->tax_category_id ?? $store->default_tax_category_id;
             })
@@ -230,8 +228,12 @@ class PosScreen extends Component
             ->get()
             ->keyBy('id');
             
+        // Gunakan eager loading untuk semua varian di cart sekaligus
+        $variants = ProductVariant::with(['product'])->whereIn('id', array_keys($this->cart))->get()->keyBy('id');
+
         foreach($this->cart as $variantId => $item) {
-             $variant = ProductVariant::with(['product'])->find($variantId);
+             $variant = $variants->get($variantId);
+             if (!$variant) continue;
              $taxCategoryId = $variant->product->tax_category_id ?? $store->default_tax_category_id;
              if($taxCategoryId && isset($taxCategories[$taxCategoryId])) {
                  $taxCategory = $taxCategories[$taxCategoryId];
@@ -243,31 +245,22 @@ class PosScreen extends Component
         return $tax;
     }
 
-    public function getGrandTotalProperty()
+    #[Computed]
+    public function grandTotal()
     {
-        return $this->getSubtotalProperty() - $this->getDiscountTotalProperty() + $this->getTaxTotalProperty();
+        return $this->getSubtotalProperty() - $this->getDiscountTotalProperty() + $this->taxTotal();
     }
     
     private function calculateTotals()
     {
-        $grandTotal = $this->getGrandTotalProperty();
+        $grandTotal = $this->grandTotal();
         $this->change_amount = max(0, $this->cash_received - $grandTotal);
-    }
-    
-    private function getActiveStore($staff)
-    {
-        if(!$staff) return null;
-        $primaryStore = $staff->stores()->wherePivot('is_primary', true)->first();
-        if ($primaryStore) {
-            return $primaryStore;
-        }
-        return $staff->stores()->first();
     }
 
     public function render()
     {
         $staff = Auth::user();
-        $store = $this->getActiveStore($staff);
+        $store = $staff ? $staff->getActiveStore() : null;
         $storeId = $store ? $store->id : null;
 
         $productsQuery = ProductVariant::with(['product'])
@@ -288,12 +281,23 @@ class PosScreen extends Component
         }
 
         $products = $productsQuery->simplePaginate(24);
+        
+        // Perbaikan P-03: Preload stok produk untuk halaman aktif (N+1 fix)
+        $stockMap = [];
+        if ($storeId && $products->isNotEmpty()) {
+            $stockMap = \App\Models\InventoryStock::where('store_id', $storeId)
+                ->whereIn('variant_id', $products->pluck('id'))
+                ->pluck('quantity', 'variant_id');
+        }
+
+        // Perbaikan P-06: Cache categories
         $categories = \App\Models\Category::where('active', true)->get();
 
         return view('livewire.pos-screen', [
             'products' => $products,
             'categories' => $categories,
             'storeId' => $storeId,
+            'stockMap' => $stockMap,
         ])->layout('layouts.app');
     }
 }

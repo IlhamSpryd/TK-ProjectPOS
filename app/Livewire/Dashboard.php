@@ -13,8 +13,7 @@ class Dashboard extends Component
     public function render()
     {
         $staff = Auth::user();
-        $primaryStore = $staff->stores()->wherePivot('is_primary', true)->first();
-        $store = $primaryStore ?: $staff->stores()->first();
+        $store = ($staff && method_exists($staff, 'getActiveStore')) ? $staff->getActiveStore() : null;
         $storeId = $store ? $store->id : null;
 
         $todayRevenue = 0;
@@ -33,11 +32,30 @@ class Dashboard extends Component
 
         $activeProducts = ProductVariant::where('active', true)->count();
 
+        // 7-day revenue trend for chart (P-10)
+        $chartData = [];
+        $chartLabels = [];
+        if ($storeId) {
+            $last7Days = collect(range(6, 0))->map(function ($days) {
+                return Carbon::today()->subDays($days);
+            });
+            
+            foreach ($last7Days as $date) {
+                $chartLabels[] = $date->format('d/m');
+                $dailyRevenue = Sale::where('store_id', $storeId)
+                    ->whereDate('created_at', $date)
+                    ->sum('grand_total');
+                $chartData[] = $dailyRevenue;
+            }
+        }
+
         return view('dashboard', [
             'todayRevenue' => $todayRevenue,
             'activeProducts' => $activeProducts,
             'totalSalesToday' => $totalSalesToday,
-            'store' => $store
+            'store' => $store,
+            'chartLabels' => $chartLabels,
+            'chartData' => $chartData
         ])->layout('layouts.app');
     }
 }

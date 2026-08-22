@@ -2,7 +2,7 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h1 class="text-h2 font-bold text-neutral-900">Selamat Datang, {{ auth()->user()->full_name }}! 👋</h1>
+            <h1 class="text-h2 font-bold text-neutral-900">Selamat Datang, {{ auth()->user()->full_name ?? auth()->user()->name }}! 👋</h1>
             <p class="text-body text-neutral-500 mt-1">Berikut adalah ringkasan penjualan {{ $store ? $store->name : 'toko Anda' }} hari ini.</p>
         </div>
         <div>
@@ -93,23 +93,46 @@
                 </div>
                 <x-ui.button variant="ghost" size="sm" icon-trailing="chevron-down">Minggu Ini</x-ui.button>
             </div>
-            <div class="flex-1 min-h-[300px] bg-neutral-50 rounded-lg border border-neutral-100 flex items-center justify-center relative overflow-hidden">
-                <!-- Placeholder Chart -->
-                <div class="absolute inset-0 flex items-end justify-between p-6 opacity-40 pointer-events-none">
-                    <div class="w-full max-w-[40px] bg-primary-300 rounded-t-lg h-[40%]"></div>
-                    <div class="w-full max-w-[40px] bg-primary-300 rounded-t-lg h-[60%]"></div>
-                    <div class="w-full max-w-[40px] bg-primary-300 rounded-t-lg h-[45%]"></div>
-                    <div class="w-full max-w-[40px] bg-primary-300 rounded-t-lg h-[80%]"></div>
-                    <div class="w-full max-w-[40px] bg-primary-300 rounded-t-lg h-[65%]"></div>
-                    <div class="w-full max-w-[40px] bg-primary-300 rounded-t-lg h-[90%]"></div>
-                    <div class="w-full max-w-[40px] bg-primary-300 rounded-t-lg h-[75%]"></div>
-                </div>
-                <div class="text-center z-10">
-                    <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center mx-auto mb-3 shadow-xs">
-                        <flux:icon.chart-bar class="w-6 h-6 text-neutral-400" />
+            <div class="flex-1 min-h-[300px] bg-neutral-50 rounded-lg border border-neutral-100 p-6 flex flex-col justify-end" x-data="{
+                chartData: {{ json_encode($chartData) }},
+                chartLabels: {{ json_encode($chartLabels) }},
+                maxData: {{ max(1, max($chartData ?: [0])) }},
+                hoveredIndex: null
+            }">
+                @if(array_sum($chartData) == 0)
+                    <div class="m-auto text-center">
+                        <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center mx-auto mb-3 shadow-xs">
+                            <flux:icon.chart-bar class="w-6 h-6 text-neutral-400" />
+                        </div>
+                        <p class="text-body-sm text-neutral-500 font-medium">Belum ada data penjualan 7 hari terakhir.</p>
                     </div>
-                    <p class="text-body-sm text-neutral-500 font-medium">Integrasi Chart Akan Segera Hadir</p>
-                </div>
+                @else
+                    <div class="flex items-end justify-between h-full gap-2 relative">
+                        <template x-for="(value, index) in chartData" :key="index">
+                            <div class="relative flex flex-col justify-end items-center flex-1 h-full group"
+                                 @mouseenter="hoveredIndex = index"
+                                 @mouseleave="hoveredIndex = null">
+                                 
+                                <!-- Tooltip -->
+                                <div x-show="hoveredIndex === index" 
+                                     x-transition.opacity
+                                     class="absolute -top-12 z-10 bg-neutral-800 text-white text-xs py-1 px-2 rounded-md whitespace-nowrap shadow-sm"
+                                     style="display: none;">
+                                    Rp <span x-text="new Intl.NumberFormat('id-ID').format(value)"></span>
+                                    <div class="absolute w-2 h-2 bg-neutral-800 rotate-45 -bottom-1 left-1/2 -translate-x-1/2"></div>
+                                </div>
+
+                                <!-- Bar -->
+                                <div class="w-full max-w-[40px] bg-primary-400 rounded-t-lg transition-all duration-300 hover:bg-primary-500 cursor-pointer"
+                                     :style="`height: ${Math.max(5, (value / maxData) * 100)}%;`">
+                                </div>
+                                
+                                <!-- Label -->
+                                <div class="text-[10px] sm:text-xs text-neutral-500 font-medium mt-2 text-center" x-text="chartLabels[index]"></div>
+                            </div>
+                        </template>
+                    </div>
+                @endif
             </div>
         </x-ui.card>
 

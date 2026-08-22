@@ -67,4 +67,21 @@ class Staff extends Authenticatable
     {
         return $this->role && $this->role->name === 'Super Admin';
     }
+
+    protected $cachedActiveStore = false;
+
+    /**
+     * Get the active store for the staff member, with in-memory caching per request.
+     */
+    public function getActiveStore()
+    {
+        if ($this->cachedActiveStore !== false) {
+            return $this->cachedActiveStore;
+        }
+
+        $primaryStore = $this->stores()->wherePivot('is_primary', true)->first();
+        $this->cachedActiveStore = $primaryStore ?: $this->stores()->first();
+        
+        return $this->cachedActiveStore;
+    }
 }

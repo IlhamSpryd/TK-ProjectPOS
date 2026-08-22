@@ -54,9 +54,7 @@
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                     @foreach($products as $variant)
                         @php
-                            $stock = \App\Models\InventoryStock::where('store_id', $storeId)
-                                ->where('variant_id', $variant->id)
-                                ->value('quantity') ?? 0;
+                            $stock = $stockMap[$variant->id] ?? 0;
                             $hasStock = $stock > 0;
                             $categoryId = $variant->product->category_id;
                         @endphp

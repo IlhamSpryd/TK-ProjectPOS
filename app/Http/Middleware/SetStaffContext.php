@@ -11,7 +11,7 @@ class SetStaffContext
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (auth()->check()) {
+        if (auth()->check() && DB::connection()->getDriverName() === 'pgsql') {
             DB::statement(
                 "SELECT set_config('app.staff_id', ?, false)",
                 [(string) auth()->id()]
@@ -21,7 +21,7 @@ class SetStaffContext
         $response = $next($request);
 
         // Reset to prevent leakage if connection is kept alive without pooler discard
-        if (auth()->check()) {
+        if (auth()->check() && DB::connection()->getDriverName() === 'pgsql') {
             DB::statement("SELECT set_config('app.staff_id', '', false)");
         }
 
