@@ -65,7 +65,7 @@ class CategoryForm extends Component
 
             $this->dispatch('categorySaved');
             $this->dispatch('close-category-modal');
-            \Illuminate\Support\Facades\Cache::forget('categories:active:v1');
+            \App\Models\Category::clearActiveCache();
             $this->dispatch('toast', message: $message, type: 'success');
         } catch (\Exception $e) {
             Log::error('Gagal menyimpan kategori: ' . $e->getMessage());

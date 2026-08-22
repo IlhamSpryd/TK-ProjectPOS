@@ -27,12 +27,18 @@ class TaxCategory extends Model
         'active' => 'boolean'
     ];
 
+    protected static $activeCache = null;
+
     public static function activeCached(): \Illuminate\Support\Collection
     {
-        return \Illuminate\Support\Facades\Cache::remember(
-            'tax_categories:active:v1',
-            now()->addHours(6),
-            fn () => self::where('active', true)->orderBy('name')->get()
-        );
+        if (self::$activeCache === null) {
+            self::$activeCache = self::where('active', true)->orderBy('name')->get();
+        }
+        return self::$activeCache;
+    }
+
+    public static function clearActiveCache(): void
+    {
+        self::$activeCache = null;
     }
 }
