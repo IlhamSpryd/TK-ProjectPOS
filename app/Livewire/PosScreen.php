@@ -36,9 +36,7 @@ class PosScreen extends Component
     #[Computed]
     public function customers()
     {
-        return Cache::remember('customers:active:pos', now()->addMinutes(10), function () {
-            return Customer::where('active', true)->orderBy('name')->limit(100)->get();
-        });
+        return Customer::where('active', true)->orderBy('name')->limit(100)->get();
     }
 
     public function updatedSearch()
