@@ -127,7 +127,7 @@
                 </div>
                 <select wire:model.live="customer_id" class="w-full px-2.5 py-1.5 bg-neutral-50 border border-neutral-200 rounded-md text-[13px] font-medium focus:outline-none focus:border-neutral-400">
                     <option value="">Pilih Pelanggan (Opsional)</option>
-                    @foreach($customers as $c)
+                    @foreach($this->customers as $c)
                         <option value="{{ $c->id }}">{{ $c->name }}</option>
                     @endforeach
                 </select>

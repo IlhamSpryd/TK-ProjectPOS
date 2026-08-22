@@ -24,14 +24,21 @@ class PosScreen extends Component
     public $cash_received = 0;
     public $change_amount = 0;
     public ?Sale $lastSale = null;
-    public $customers = [];
-    
+
     // UI state
     public bool $showSuccessModal = false;
 
     public function mount()
     {
-        $this->customers = Customer::where('active', true)->limit(100)->get();
+        // ...
+    }
+
+    #[Computed]
+    public function customers()
+    {
+        return Cache::remember('customers:active:pos', now()->addMinutes(10), function () {
+            return Customer::where('active', true)->orderBy('name')->limit(100)->get();
+        });
     }
 
     public function updatedSearch()
