@@ -1,3 +1,4 @@
+<x-layouts.app :title="$heading ?? 'Pengaturan'" :breadcrumbs="[['label' => 'Dashboard', 'route' => route('dashboard')], ['label' => 'Pengaturan']]">
 <div class="flex items-start max-md:flex-col py-6 max-w-5xl mx-auto">
     <div class="me-10 w-full pb-4 md:w-[260px]">
         <div class="flex flex-col gap-2">
@@ -30,3 +31,4 @@
         </div>
     </div>
 </div>
+</x-layouts.app>
