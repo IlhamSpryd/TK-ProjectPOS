@@ -24,6 +24,16 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
+        // RBAC: Secara otomatis meloloskan Super Admin dan mengecek permission dari database
+        \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
+            if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
+                return true;
+            }
+            if (method_exists($user, 'hasPermission') && $user->hasPermission($ability)) {
+                return true;
+            }
+        });
     }
 
     /**

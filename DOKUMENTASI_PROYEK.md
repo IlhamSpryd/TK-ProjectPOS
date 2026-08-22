@@ -18,9 +18,16 @@ Dokumen ini berisi rangkuman komprehensif mengenai status proyek aplikasi Point 
 9. **Laporan & Analitik (Dashboard)**: UI dasbor kasir yang terintegrasi penuh dengan komponen Livewire untuk menyajikan data metrik secara *real-time* (pendapatan, jumlah order, produk aktif).
 
 ### ❌ Yang Belum Ada (Belum Diimplementasikan)
-1. **Manajemen CRUD Data Lanjutan**: Pengelolaan Pelanggan dan Cabang (Toko).
+1. **Sistem Manajemen Inventaris**: Pelacakan masuk-keluarnya stok barang (`stock_movements`) melalui antarmuka web.
 2. **Role-Based Access Control (RBAC) pada UI**: Meskipun API dan Backend aman dengan RLS, belum ada pembatasan tampilan (menu yang disembunyikan) berdasarkan peran (*role*) dari masing-masing *staff*.
-3. **Sistem Manajemen Inventaris**: Pelacakan masuk-keluarnya stok barang (`stock_movements`) melalui antarmuka web.
+
+---
+
+## 2. Pembaruan Terbaru UI/UX (Clean, Modern, Notion-Style)
+- **Tema dan Tipografi**: Seluruh antarmuka telah direvisi dengan pendekatan desain minimalis (bersih, kontras tinggi ala Notion/GitHub).
+- **Penghapusan Dependensi Flux**: Menghapus penggunaan direktif `@fluxStyles` dan komponen UI Flux (`<flux:switch>`, `<flux:icon>`) karena tidak ter-*render* dengan benar dan menyebabkan komponen patah/hilang. Digantikan dengan input form standar berpadu Tailwind CSS agar lebih ringan dan konsisten.
+- **Sinkronisasi Backend & Frontend**: Telah dipastikan tidak ada miskomunikasi antara form blade (Frontend) dan Livewire Model (Backend). Seluruh input (`wire:model`) dari Form Staff, Cabang, Pelanggan, dan Kategori terhubung sempurna.
+- **Optimalisasi Sidebar & Layout**: Mengurangi *padding* dan ukuran *font* pada Sidebar agar muat dalam satu layar tanpa *scroll*, serta membersihkan duplikasi SVG.
 
 ---
 

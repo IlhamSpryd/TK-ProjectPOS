@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 1K8L3J9rKjuKSKMSOW43geq2nqZd38FEd28CJez9p5B6f6MJwdaq2a4MpLAdgO9
+\restrict j7WjsU2Ouj9atEafpBcrRNiYgxgHDZgPADMnGQ9Ujh4nNLPj5tzfQKE54COaUcW
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 18.1
@@ -27,15 +27,6 @@ CREATE SCHEMA auth;
 
 
 ALTER SCHEMA auth OWNER TO supabase_admin;
-
---
--- Name: extensions; Type: SCHEMA; Schema: -; Owner: postgres
---
-
-CREATE SCHEMA extensions;
-
-
-ALTER SCHEMA extensions OWNER TO postgres;
 
 --
 -- Name: graphql; Type: SCHEMA; Schema: -; Owner: supabase_admin
@@ -108,34 +99,6 @@ CREATE SCHEMA vault;
 ALTER SCHEMA vault OWNER TO supabase_admin;
 
 --
--- Name: pg_stat_statements; Type: EXTENSION; Schema: -; Owner: -
---
-
-CREATE EXTENSION IF NOT EXISTS pg_stat_statements WITH SCHEMA extensions;
-
-
---
--- Name: EXTENSION pg_stat_statements; Type: COMMENT; Schema: -; Owner: 
---
-
-COMMENT ON EXTENSION pg_stat_statements IS 'track planning and execution statistics of all SQL statements executed';
-
-
---
--- Name: pgcrypto; Type: EXTENSION; Schema: -; Owner: -
---
-
-CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
-
-
---
--- Name: EXTENSION pgcrypto; Type: COMMENT; Schema: -; Owner: 
---
-
-COMMENT ON EXTENSION pgcrypto IS 'cryptographic functions';
-
-
---
 -- Name: supabase_vault; Type: EXTENSION; Schema: -; Owner: -
 --
 
@@ -147,20 +110,6 @@ CREATE EXTENSION IF NOT EXISTS supabase_vault WITH SCHEMA vault;
 --
 
 COMMENT ON EXTENSION supabase_vault IS 'Supabase Vault Extension';
-
-
---
--- Name: uuid-ossp; Type: EXTENSION; Schema: -; Owner: -
---
-
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA extensions;
-
-
---
--- Name: EXTENSION "uuid-ossp"; Type: COMMENT; Schema: -; Owner: 
---
-
-COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UUIDs)';
 
 
 --
@@ -463,386 +412,6 @@ COMMENT ON FUNCTION auth.uid() IS 'Deprecated. Use auth.jwt() -> ''sub'' instead
 
 
 --
--- Name: apply_inventory_movement(); Type: FUNCTION; Schema: extensions; Owner: postgres
---
-
-CREATE FUNCTION extensions.apply_inventory_movement() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-begin
-  insert into inventory_stock (variant_id, store_id, quantity)
-  values (new.variant_id, new.store_id, new.quantity_change)
-  on conflict (variant_id, store_id)
-  do update set quantity   = inventory_stock.quantity + new.quantity_change,
-                updated_at = now();
-  return new;
-end;
-$$;
-
-
-ALTER FUNCTION extensions.apply_inventory_movement() OWNER TO postgres;
-
---
--- Name: get_current_staff_id(); Type: FUNCTION; Schema: extensions; Owner: postgres
---
-
-CREATE FUNCTION extensions.get_current_staff_id() RETURNS uuid
-    LANGUAGE sql STABLE
-    AS $$
-  select nullif(current_setting('app.staff_id', true), '')::uuid;
-$$;
-
-
-ALTER FUNCTION extensions.get_current_staff_id() OWNER TO postgres;
-
---
--- Name: grant_pg_cron_access(); Type: FUNCTION; Schema: extensions; Owner: supabase_admin
---
-
-CREATE FUNCTION extensions.grant_pg_cron_access() RETURNS event_trigger
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-  IF EXISTS (
-    SELECT
-    FROM pg_event_trigger_ddl_commands() AS ev
-    JOIN pg_extension AS ext
-    ON ev.objid = ext.oid
-    WHERE ext.extname = 'pg_cron'
-  )
-  THEN
-    grant usage on schema cron to postgres with grant option;
-
-    alter default privileges in schema cron grant all on tables to postgres with grant option;
-    alter default privileges in schema cron grant all on functions to postgres with grant option;
-    alter default privileges in schema cron grant all on sequences to postgres with grant option;
-
-    alter default privileges for user supabase_admin in schema cron grant all
-        on sequences to postgres with grant option;
-    alter default privileges for user supabase_admin in schema cron grant all
-        on tables to postgres with grant option;
-    alter default privileges for user supabase_admin in schema cron grant all
-        on functions to postgres with grant option;
-
-    grant all privileges on all tables in schema cron to postgres with grant option;
-    revoke all on table cron.job from postgres;
-    grant select on table cron.job to postgres with grant option;
-  END IF;
-END;
-$$;
-
-
-ALTER FUNCTION extensions.grant_pg_cron_access() OWNER TO supabase_admin;
-
---
--- Name: FUNCTION grant_pg_cron_access(); Type: COMMENT; Schema: extensions; Owner: supabase_admin
---
-
-COMMENT ON FUNCTION extensions.grant_pg_cron_access() IS 'Grants access to pg_cron';
-
-
---
--- Name: grant_pg_graphql_access(); Type: FUNCTION; Schema: extensions; Owner: supabase_admin
---
-
-CREATE FUNCTION extensions.grant_pg_graphql_access() RETURNS event_trigger
-    LANGUAGE plpgsql
-    AS $_$
-begin
-    if not exists (
-        select 1
-        from pg_event_trigger_ddl_commands() ev
-        join pg_catalog.pg_extension e on ev.objid = e.oid
-        where e.extname = 'pg_graphql'
-    ) then
-        return;
-    end if;
-
-    drop function if exists graphql_public.graphql;
-    create or replace function graphql_public.graphql(
-        "operationName" text default null,
-        query text default null,
-        variables jsonb default null,
-        extensions jsonb default null
-    )
-        returns jsonb
-        language sql
-    as $$
-        select graphql.resolve(
-            query := query,
-            variables := coalesce(variables, '{}'),
-            "operationName" := "operationName",
-            extensions := extensions
-        );
-    $$;
-
-    -- Attach the wrapper to the extension so DROP EXTENSION cascades to it,
-    -- which in turn triggers set_graphql_placeholder to reinstall the "not enabled" stub.
-    alter extension pg_graphql add function graphql_public.graphql(text, text, jsonb, jsonb);
-
-    grant usage on schema graphql to postgres, anon, authenticated, service_role;
-    grant execute on function graphql.resolve to postgres, anon, authenticated, service_role;
-    grant usage on schema graphql to postgres with grant option;
-    grant usage on schema graphql_public to postgres with grant option;
-end;
-$_$;
-
-
-ALTER FUNCTION extensions.grant_pg_graphql_access() OWNER TO supabase_admin;
-
---
--- Name: FUNCTION grant_pg_graphql_access(); Type: COMMENT; Schema: extensions; Owner: supabase_admin
---
-
-COMMENT ON FUNCTION extensions.grant_pg_graphql_access() IS 'Grants access to pg_graphql';
-
-
---
--- Name: grant_pg_net_access(); Type: FUNCTION; Schema: extensions; Owner: supabase_admin
---
-
-CREATE FUNCTION extensions.grant_pg_net_access() RETURNS event_trigger
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-  IF EXISTS (
-    SELECT 1
-    FROM pg_event_trigger_ddl_commands() AS ev
-    JOIN pg_extension AS ext
-    ON ev.objid = ext.oid
-    WHERE ext.extname = 'pg_net'
-  )
-  THEN
-    IF NOT EXISTS (
-      SELECT 1
-      FROM pg_roles
-      WHERE rolname = 'supabase_functions_admin'
-    )
-    THEN
-      CREATE USER supabase_functions_admin NOINHERIT CREATEROLE LOGIN NOREPLICATION;
-    END IF;
-
-    GRANT USAGE ON SCHEMA net TO supabase_functions_admin, postgres, anon, authenticated, service_role;
-
-    IF EXISTS (
-      SELECT FROM pg_extension
-      WHERE extname = 'pg_net'
-      -- all versions in use on existing projects as of 2025-02-20
-      -- version 0.12.0 onwards don't need these applied
-      AND extversion IN ('0.2', '0.6', '0.7', '0.7.1', '0.8', '0.10.0', '0.11.0')
-    ) THEN
-      ALTER function net.http_get(url text, params jsonb, headers jsonb, timeout_milliseconds integer) SECURITY DEFINER;
-      ALTER function net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds integer) SECURITY DEFINER;
-
-      ALTER function net.http_get(url text, params jsonb, headers jsonb, timeout_milliseconds integer) SET search_path = net;
-      ALTER function net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds integer) SET search_path = net;
-
-      REVOKE ALL ON FUNCTION net.http_get(url text, params jsonb, headers jsonb, timeout_milliseconds integer) FROM PUBLIC;
-      REVOKE ALL ON FUNCTION net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds integer) FROM PUBLIC;
-
-      GRANT EXECUTE ON FUNCTION net.http_get(url text, params jsonb, headers jsonb, timeout_milliseconds integer) TO supabase_functions_admin, postgres, anon, authenticated, service_role;
-      GRANT EXECUTE ON FUNCTION net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds integer) TO supabase_functions_admin, postgres, anon, authenticated, service_role;
-    END IF;
-  END IF;
-END;
-$$;
-
-
-ALTER FUNCTION extensions.grant_pg_net_access() OWNER TO supabase_admin;
-
---
--- Name: FUNCTION grant_pg_net_access(); Type: COMMENT; Schema: extensions; Owner: supabase_admin
---
-
-COMMENT ON FUNCTION extensions.grant_pg_net_access() IS 'Grants access to pg_net';
-
-
---
--- Name: is_admin(); Type: FUNCTION; Schema: extensions; Owner: postgres
---
-
-CREATE FUNCTION extensions.is_admin() RETURNS boolean
-    LANGUAGE sql STABLE SECURITY DEFINER
-    AS $$
-  select exists (
-    select 1 from staff s
-    join roles r on r.id = s.role_id
-    where s.id = get_current_staff_id()
-      and r.name in ('owner','admin')
-  );
-$$;
-
-
-ALTER FUNCTION extensions.is_admin() OWNER TO postgres;
-
---
--- Name: is_staff_of_store(uuid); Type: FUNCTION; Schema: extensions; Owner: postgres
---
-
-CREATE FUNCTION extensions.is_staff_of_store(p_store_id uuid) RETURNS boolean
-    LANGUAGE sql STABLE SECURITY DEFINER
-    AS $$
-  select exists (
-    select 1 from staff_stores
-    where staff_id = get_current_staff_id()
-      and store_id = p_store_id
-  ) or is_admin();
-$$;
-
-
-ALTER FUNCTION extensions.is_staff_of_store(p_store_id uuid) OWNER TO postgres;
-
---
--- Name: pgrst_ddl_watch(); Type: FUNCTION; Schema: extensions; Owner: supabase_admin
---
-
-CREATE FUNCTION extensions.pgrst_ddl_watch() RETURNS event_trigger
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-  cmd record;
-BEGIN
-  FOR cmd IN SELECT * FROM pg_event_trigger_ddl_commands()
-  LOOP
-    IF cmd.command_tag IN (
-      'CREATE SCHEMA', 'ALTER SCHEMA'
-    , 'CREATE TABLE', 'CREATE TABLE AS', 'SELECT INTO', 'ALTER TABLE'
-    , 'CREATE FOREIGN TABLE', 'ALTER FOREIGN TABLE'
-    , 'CREATE VIEW', 'ALTER VIEW'
-    , 'CREATE MATERIALIZED VIEW', 'ALTER MATERIALIZED VIEW'
-    , 'CREATE FUNCTION', 'ALTER FUNCTION'
-    , 'CREATE TRIGGER'
-    , 'CREATE TYPE', 'ALTER TYPE'
-    , 'CREATE RULE'
-    , 'COMMENT'
-    )
-    -- don't notify in case of CREATE TEMP table or other objects created on pg_temp
-    AND cmd.schema_name is distinct from 'pg_temp'
-    THEN
-      NOTIFY pgrst, 'reload schema';
-    END IF;
-  END LOOP;
-END; $$;
-
-
-ALTER FUNCTION extensions.pgrst_ddl_watch() OWNER TO supabase_admin;
-
---
--- Name: pgrst_drop_watch(); Type: FUNCTION; Schema: extensions; Owner: supabase_admin
---
-
-CREATE FUNCTION extensions.pgrst_drop_watch() RETURNS event_trigger
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-  obj record;
-BEGIN
-  FOR obj IN SELECT * FROM pg_event_trigger_dropped_objects()
-  LOOP
-    IF obj.object_type IN (
-      'schema'
-    , 'table'
-    , 'foreign table'
-    , 'view'
-    , 'materialized view'
-    , 'function'
-    , 'trigger'
-    , 'type'
-    , 'rule'
-    )
-    AND obj.is_temporary IS false -- no pg_temp objects
-    THEN
-      NOTIFY pgrst, 'reload schema';
-    END IF;
-  END LOOP;
-END; $$;
-
-
-ALTER FUNCTION extensions.pgrst_drop_watch() OWNER TO supabase_admin;
-
---
--- Name: set_graphql_placeholder(); Type: FUNCTION; Schema: extensions; Owner: supabase_admin
---
-
-CREATE FUNCTION extensions.set_graphql_placeholder() RETURNS event_trigger
-    LANGUAGE plpgsql
-    AS $_$
-    DECLARE
-    graphql_is_dropped bool;
-    BEGIN
-    graphql_is_dropped = (
-        SELECT ev.schema_name = 'graphql_public'
-        FROM pg_event_trigger_dropped_objects() AS ev
-        WHERE ev.schema_name = 'graphql_public'
-    );
-
-    IF graphql_is_dropped
-    THEN
-        create or replace function graphql_public.graphql(
-            "operationName" text default null,
-            query text default null,
-            variables jsonb default null,
-            extensions jsonb default null
-        )
-            returns jsonb
-            language plpgsql
-        as $$
-            DECLARE
-                server_version float;
-            BEGIN
-                server_version = (SELECT (SPLIT_PART((select version()), ' ', 2))::float);
-
-                IF server_version >= 14 THEN
-                    RETURN jsonb_build_object(
-                        'errors', jsonb_build_array(
-                            jsonb_build_object(
-                                'message', 'pg_graphql extension is not enabled.'
-                            )
-                        )
-                    );
-                ELSE
-                    RETURN jsonb_build_object(
-                        'errors', jsonb_build_array(
-                            jsonb_build_object(
-                                'message', 'pg_graphql is only available on projects running Postgres 14 onwards.'
-                            )
-                        )
-                    );
-                END IF;
-            END;
-        $$;
-    END IF;
-
-    END;
-$_$;
-
-
-ALTER FUNCTION extensions.set_graphql_placeholder() OWNER TO supabase_admin;
-
---
--- Name: FUNCTION set_graphql_placeholder(); Type: COMMENT; Schema: extensions; Owner: supabase_admin
---
-
-COMMENT ON FUNCTION extensions.set_graphql_placeholder() IS 'Reintroduces placeholder function for graphql_public.graphql';
-
-
---
--- Name: set_updated_at(); Type: FUNCTION; Schema: extensions; Owner: postgres
---
-
-CREATE FUNCTION extensions.set_updated_at() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-begin
-  new.updated_at = now();
-  return new;
-end;
-$$;
-
-
-ALTER FUNCTION extensions.set_updated_at() OWNER TO postgres;
-
---
 -- Name: graphql(text, text, jsonb, jsonb); Type: FUNCTION; Schema: graphql_public; Owner: supabase_admin
 --
 
@@ -908,87 +477,203 @@ ALTER FUNCTION pgbouncer.get_auth(p_usename text) OWNER TO supabase_admin;
 --
 
 CREATE FUNCTION public.apply_inventory_movement() RETURNS trigger
-    LANGUAGE plpgsql SECURITY DEFINER
-    SET search_path TO 'public', 'pg_temp'
-    AS $$
-begin
-  insert into inventory_stock (variant_id, store_id, quantity)
-  values (new.variant_id, new.store_id, new.quantity_change)
-  on conflict (variant_id, store_id)
-  do update set quantity   = inventory_stock.quantity + new.quantity_change,
-                updated_at = now();
-  return new;
-end;
+    LANGUAGE plpgsql
+    AS $$ 
+BEGIN 
+  UPDATE inventory_stock 
+  SET quantity = quantity + new.quantity_change, updated_at = now() 
+  WHERE variant_id = new.variant_id AND store_id = new.store_id; 
+  
+  IF NOT FOUND THEN 
+    INSERT INTO inventory_stock (variant_id, store_id, quantity) 
+    VALUES (new.variant_id, new.store_id, new.quantity_change); 
+  END IF; 
+
+  RETURN NEW; 
+END; 
 $$;
 
 
 ALTER FUNCTION public.apply_inventory_movement() OWNER TO postgres;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: staff; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.staff (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    role_id uuid NOT NULL,
+    full_name character varying(100) NOT NULL,
+    email character varying(100) NOT NULL,
+    password_hash character varying(255) NOT NULL,
+    pin_hash character varying(255),
+    remember_token character varying(100),
+    active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    deleted_at timestamp with time zone
+);
+
+ALTER TABLE ONLY public.staff FORCE ROW LEVEL SECURITY;
+
+
+ALTER TABLE public.staff OWNER TO postgres;
+
+--
+-- Name: auth_get_staff_by_email(text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.auth_get_staff_by_email(p_email text) RETURNS SETOF public.staff
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT * FROM public.staff WHERE email = p_email AND deleted_at IS NULL LIMIT 1;
+$$;
+
+
+ALTER FUNCTION public.auth_get_staff_by_email(p_email text) OWNER TO postgres;
+
+--
+-- Name: auth_get_staff_by_id(uuid); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.auth_get_staff_by_id(p_id uuid) RETURNS SETOF public.staff
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT * FROM public.staff WHERE id = p_id AND deleted_at IS NULL LIMIT 1;
+$$;
+
+
+ALTER FUNCTION public.auth_get_staff_by_id(p_id uuid) OWNER TO postgres;
+
+--
+-- Name: auth_get_staff_by_remember_token(uuid, text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.auth_get_staff_by_remember_token(p_id uuid, p_token text) RETURNS SETOF public.staff
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT * FROM public.staff
+  WHERE id = p_id AND remember_token = p_token AND deleted_at IS NULL
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION public.auth_get_staff_by_remember_token(p_id uuid, p_token text) OWNER TO postgres;
+
+--
+-- Name: calc_tax_amount(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.calc_tax_amount() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_rate NUMERIC(5,2);
+BEGIN
+  IF NEW.tax_category_id IS NOT NULL THEN
+    SELECT rate INTO v_rate FROM public.tax_categories WHERE id = NEW.tax_category_id;
+    IF FOUND THEN
+      NEW.tax_amount := (NEW.unit_price * NEW.quantity - COALESCE(NEW.discount, 0)) * (v_rate / 100);
+    END IF;
+  ELSE
+    NEW.tax_amount := 0;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.calc_tax_amount() OWNER TO postgres;
 
 --
 -- Name: check_tax_category_for_store(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
 CREATE FUNCTION public.check_tax_category_for_store() RETURNS trigger
-    LANGUAGE plpgsql SECURITY DEFINER
-    SET search_path TO 'public', 'pg_temp'
-    AS $$
-declare
-  v_tax_type varchar(20);
-  v_rate numeric(5,2);
-  v_store_business_type varchar(20);
-  v_store_is_pkp boolean;
-  v_store_id uuid;
-begin
-  -- Ambil store_id dari tabel sales berdasarkan sale_id
-  select store_id into v_store_id
-  from public.sales
-  where id = new.sale_id;
-  if not found then
-    raise exception 'sale_id % tidak ditemukan di tabel sales', new.sale_id;
-  end if;
-
-  -- Ambil tax_type dan rate dari tax_category
-  select tax_type, rate into v_tax_type, v_rate
-  from public.tax_categories
-  where id = new.tax_category_id;
-  if not found then
-    raise exception 'tax_category_id % tidak ditemukan', new.tax_category_id;
-  end if;
-
-  -- Ambil data store
-  select business_type, is_pkp into v_store_business_type, v_store_is_pkp
-  from public.stores
-  where id = v_store_id;
-  if not found then
-    raise exception 'store_id % tidak ditemukan', v_store_id;
-  end if;
-
-  -- Validasi: F&B tidak boleh PPN/PPnBM
-  if v_store_business_type = 'fnb' and v_tax_type in ('ppn','ppn_mewah') then
-    raise exception 'Store F&B tidak boleh memakai PPN/PPnBM (tax_type: %)', v_tax_type;
-  end if;
-
-  -- Validasi: Non-PKP tidak boleh PPN/PPnBM
-  if not v_store_is_pkp and v_tax_type in ('ppn','ppn_mewah') then
-    raise exception 'Store non-PKP tidak boleh memakai PPN/PPnBM (tax_type: %)', v_tax_type;
-  end if;
-
-  -- Validasi: Non-F&B tidak boleh PBJT
-  if v_store_business_type <> 'fnb' and v_tax_type = 'pbjt' then
-    raise exception 'Store non-F&B tidak boleh memakai PBJT (tax_type: %)', v_tax_type;
-  end if;
-
-  -- Validasi: Exempt harus rate 0
-  if v_tax_type = 'exempt' and v_rate <> 0 then
-    raise exception 'Tax category exempt harus memiliki rate 0';
-  end if;
-
-  return new;
-end;
+    LANGUAGE plpgsql
+    AS $$ 
+DECLARE 
+  v_tax_type varchar(20); 
+  v_rate numeric(5,2); 
+  v_store_business_type varchar(20); 
+  v_store_is_pkp boolean; 
+  v_store_id uuid; 
+BEGIN 
+  IF NEW.tax_category_id IS NULL THEN 
+    RETURN NEW; 
+  END IF; 
+  
+  select store_id into v_store_id from public.sales where id = new.sale_id; 
+  if not found then 
+    raise exception 'sale_id % tidak ditemukan di tabel sales', new.sale_id; 
+  end if; 
+  
+  select tax_type, rate into v_tax_type, v_rate from public.tax_categories where id = new.tax_category_id; 
+  if not found then 
+    raise exception 'tax_category_id % tidak ditemukan', new.tax_category_id; 
+  end if; 
+  
+  select business_type, is_pkp into v_store_business_type, v_store_is_pkp from public.stores where id = v_store_id; 
+  if not found then 
+    raise exception 'store_id % tidak ditemukan', v_store_id; 
+  end if; 
+  
+  if v_store_business_type = 'fnb' and v_tax_type in ('ppn','ppn_mewah') then 
+    raise exception 'Store F&B tidak boleh memakai PPN/PPnBM (tax_type: %)', v_tax_type; 
+  end if; 
+  
+  if not v_store_is_pkp and v_tax_type in ('ppn','ppn_mewah') then 
+    raise exception 'Store non-PKP tidak boleh memakai PPN/PPnBM (tax_type: %)', v_tax_type; 
+  end if; 
+  
+  if v_store_business_type <> 'fnb' and v_tax_type = 'pbjt' then 
+    raise exception 'Store non-F&B tidak boleh memakai PBJT (tax_type: %)', v_tax_type; 
+  end if; 
+  
+  if v_tax_type = 'exempt' and v_rate <> 0 then 
+    raise exception 'Tax category exempt harus memiliki rate 0'; 
+  end if; 
+  
+  return new; 
+END; 
 $$;
 
 
 ALTER FUNCTION public.check_tax_category_for_store() OWNER TO postgres;
+
+--
+-- Name: create_return_movement(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.create_return_movement() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+BEGIN
+  IF NEW.restock THEN
+    INSERT INTO public.inventory_movements
+      (variant_id, store_id, movement_type, quantity_change, reference_table, reference_id, staff_id)
+    SELECT
+      si.variant_id, s.store_id, 'return_in', NEW.quantity,
+      'sale_return', NEW.sale_return_id, s.staff_id
+    FROM public.sale_items si
+    JOIN public.sales s ON s.id = si.sale_id
+    WHERE si.id = NEW.sale_item_id;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.create_return_movement() OWNER TO postgres;
 
 --
 -- Name: get_current_staff_id(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -1049,6 +734,85 @@ $$;
 
 
 ALTER FUNCTION public.is_staff_of_store(p_store_id uuid) OWNER TO postgres;
+
+--
+-- Name: log_sensitive_changes(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.log_sensitive_changes() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_staff_id uuid;
+BEGIN
+  -- Try to get current staff id from custom claim or function if available
+  BEGIN
+    v_staff_id := public.get_current_staff_id();
+  EXCEPTION WHEN OTHERS THEN
+    v_staff_id := NULL;
+  END;
+
+  IF TG_OP = 'INSERT' THEN
+    INSERT INTO public.audit_logs (table_name, record_id, action, new_data, changed_by)
+    VALUES (TG_TABLE_NAME, NEW.id, TG_OP, row_to_json(NEW)::jsonb, v_staff_id);
+    RETURN NEW;
+  ELSIF TG_OP = 'UPDATE' THEN
+    INSERT INTO public.audit_logs (table_name, record_id, action, old_data, new_data, changed_by)
+    VALUES (TG_TABLE_NAME, NEW.id, TG_OP, row_to_json(OLD)::jsonb, row_to_json(NEW)::jsonb, v_staff_id);
+    RETURN NEW;
+  ELSIF TG_OP = 'DELETE' THEN
+    INSERT INTO public.audit_logs (table_name, record_id, action, old_data, changed_by)
+    VALUES (TG_TABLE_NAME, OLD.id, TG_OP, row_to_json(OLD)::jsonb, v_staff_id);
+    RETURN OLD;
+  END IF;
+  RETURN NULL;
+END;
+$$;
+
+
+ALTER FUNCTION public.log_sensitive_changes() OWNER TO postgres;
+
+--
+-- Name: recalc_sale_totals(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.recalc_sale_totals() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  target_sale_id uuid;
+BEGIN
+  -- We recalculate for the affected sale_id (handling both NEW and OLD for INSERT/UPDATE/DELETE)
+  IF TG_OP = 'DELETE' THEN
+    target_sale_id := OLD.sale_id;
+  ELSE
+    target_sale_id := NEW.sale_id;
+  END IF;
+
+  UPDATE public.sales s
+  SET
+    subtotal = COALESCE((SELECT SUM(unit_price * quantity) FROM public.sale_items WHERE sale_id = s.id), 0),
+    discount_total = COALESCE((SELECT SUM(discount) FROM public.sale_items WHERE sale_id = s.id), 0),
+    tax_total = COALESCE((SELECT SUM(tax_amount) FROM public.sale_items WHERE sale_id = s.id), 0),
+    -- grand_total handles everything. Includes the existing service_charge_total.
+    grand_total = COALESCE((SELECT SUM(unit_price * quantity) FROM public.sale_items WHERE sale_id = s.id), 0)
+                - COALESCE((SELECT SUM(discount) FROM public.sale_items WHERE sale_id = s.id), 0)
+                + COALESCE((SELECT SUM(tax_amount) FROM public.sale_items WHERE sale_id = s.id), 0)
+                + COALESCE(s.service_charge_total, 0)
+  WHERE s.id = target_sale_id;
+  
+  IF TG_OP = 'DELETE' THEN
+    RETURN OLD;
+  ELSE
+    RETURN NEW;
+  END IF;
+END;
+$$;
+
+
+ALTER FUNCTION public.recalc_sale_totals() OWNER TO postgres;
 
 --
 -- Name: set_updated_at(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -2934,10 +2698,6 @@ $$;
 
 ALTER FUNCTION storage.update_updated_at_column() OWNER TO supabase_storage_admin;
 
-SET default_tablespace = '';
-
-SET default_table_access_method = heap;
-
 --
 -- Name: audit_log_entries; Type: TABLE; Schema: auth; Owner: supabase_auth_admin
 --
@@ -3634,451 +3394,49 @@ CREATE TABLE auth.webauthn_credentials (
 ALTER TABLE auth.webauthn_credentials OWNER TO supabase_auth_admin;
 
 --
--- Name: categories; Type: TABLE; Schema: extensions; Owner: postgres
+-- Name: audit_logs; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE extensions.categories (
+CREATE TABLE public.audit_logs (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
-    parent_id uuid,
-    name character varying(100) NOT NULL,
-    active boolean DEFAULT true NOT NULL,
+    table_name character varying(100) NOT NULL,
+    record_id uuid NOT NULL,
+    action character varying(10) NOT NULL,
+    old_data jsonb,
+    new_data jsonb,
+    changed_by uuid,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    CONSTRAINT audit_logs_action_check CHECK (((action)::text = ANY ((ARRAY['INSERT'::character varying, 'UPDATE'::character varying, 'DELETE'::character varying])::text[])))
 );
 
 
-ALTER TABLE extensions.categories OWNER TO postgres;
+ALTER TABLE public.audit_logs OWNER TO postgres;
 
 --
--- Name: customers; Type: TABLE; Schema: extensions; Owner: postgres
+-- Name: cache; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE extensions.customers (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    name character varying(100) NOT NULL,
-    email character varying(100),
-    phone character varying(20),
-    address text,
-    npwp character varying(30),
-    loyalty_points integer DEFAULT 0 NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+CREATE TABLE public.cache (
+    key character varying(255) NOT NULL,
+    value text NOT NULL,
+    expiration bigint NOT NULL
 );
 
 
-ALTER TABLE extensions.customers OWNER TO postgres;
+ALTER TABLE public.cache OWNER TO postgres;
 
 --
--- Name: discounts; Type: TABLE; Schema: extensions; Owner: postgres
+-- Name: cache_locks; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE extensions.discounts (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    store_id uuid,
-    name character varying(100) NOT NULL,
-    type character varying(20) NOT NULL,
-    value numeric(15,2) NOT NULL,
-    start_date timestamp with time zone,
-    end_date timestamp with time zone,
-    active boolean DEFAULT true NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT discounts_type_check CHECK (((type)::text = ANY ((ARRAY['percentage'::character varying, 'fixed'::character varying])::text[])))
+CREATE TABLE public.cache_locks (
+    key character varying(255) NOT NULL,
+    owner character varying(255) NOT NULL,
+    expiration bigint NOT NULL
 );
 
 
-ALTER TABLE extensions.discounts OWNER TO postgres;
-
---
--- Name: expenses; Type: TABLE; Schema: extensions; Owner: postgres
---
-
-CREATE TABLE extensions.expenses (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    store_id uuid NOT NULL,
-    staff_id uuid NOT NULL,
-    category character varying(50),
-    amount numeric(15,2) NOT NULL,
-    description text,
-    expense_date timestamp with time zone DEFAULT now() NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
-ALTER TABLE extensions.expenses OWNER TO postgres;
-
---
--- Name: inventory_movements; Type: TABLE; Schema: extensions; Owner: postgres
---
-
-CREATE TABLE extensions.inventory_movements (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    variant_id uuid NOT NULL,
-    store_id uuid NOT NULL,
-    movement_type character varying(20) NOT NULL,
-    quantity_change numeric(15,2) NOT NULL,
-    reference_table character varying(50),
-    reference_id uuid,
-    note text,
-    staff_id uuid,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT inventory_movements_movement_type_check CHECK (((movement_type)::text = ANY ((ARRAY['sale'::character varying, 'purchase'::character varying, 'adjustment'::character varying, 'transfer_in'::character varying, 'transfer_out'::character varying, 'return_in'::character varying, 'return_out'::character varying])::text[])))
-);
-
-
-ALTER TABLE extensions.inventory_movements OWNER TO postgres;
-
---
--- Name: inventory_stock; Type: TABLE; Schema: extensions; Owner: postgres
---
-
-CREATE TABLE extensions.inventory_stock (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    variant_id uuid NOT NULL,
-    store_id uuid NOT NULL,
-    quantity numeric(15,2) DEFAULT 0 NOT NULL,
-    reorder_point numeric(15,2) DEFAULT 0 NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
-ALTER TABLE extensions.inventory_stock OWNER TO postgres;
-
---
--- Name: payments; Type: TABLE; Schema: extensions; Owner: postgres
---
-
-CREATE TABLE extensions.payments (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    sale_id uuid NOT NULL,
-    payment_method character varying(30) NOT NULL,
-    amount numeric(15,2) NOT NULL,
-    change_amount numeric(15,2) DEFAULT 0 NOT NULL,
-    reference_no character varying(50),
-    paid_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
-ALTER TABLE extensions.payments OWNER TO postgres;
-
---
--- Name: product_variants; Type: TABLE; Schema: extensions; Owner: postgres
---
-
-CREATE TABLE extensions.product_variants (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    product_id uuid NOT NULL,
-    sku character varying(50) NOT NULL,
-    barcode character varying(50),
-    attributes jsonb DEFAULT '{}'::jsonb NOT NULL,
-    cost_price numeric(15,2) DEFAULT 0 NOT NULL,
-    selling_price numeric(15,2) DEFAULT 0 NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    deleted_at timestamp with time zone,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
-ALTER TABLE extensions.product_variants OWNER TO postgres;
-
---
--- Name: products; Type: TABLE; Schema: extensions; Owner: postgres
---
-
-CREATE TABLE extensions.products (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    category_id uuid,
-    supplier_id uuid,
-    tax_category_id uuid,
-    name character varying(150) NOT NULL,
-    description text,
-    image_url text,
-    unit character varying(20) DEFAULT 'pcs'::character varying NOT NULL,
-    sku character varying(50) NOT NULL,
-    track_stock boolean DEFAULT true NOT NULL,
-    is_service boolean DEFAULT false NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    deleted_at timestamp with time zone,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
-ALTER TABLE extensions.products OWNER TO postgres;
-
---
--- Name: purchase_order_items; Type: TABLE; Schema: extensions; Owner: postgres
---
-
-CREATE TABLE extensions.purchase_order_items (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    purchase_order_id uuid NOT NULL,
-    variant_id uuid NOT NULL,
-    quantity numeric(15,2) NOT NULL,
-    cost_price numeric(15,2) NOT NULL,
-    discount numeric(15,2) DEFAULT 0 NOT NULL
-);
-
-
-ALTER TABLE extensions.purchase_order_items OWNER TO postgres;
-
---
--- Name: purchase_orders; Type: TABLE; Schema: extensions; Owner: postgres
---
-
-CREATE TABLE extensions.purchase_orders (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    store_id uuid NOT NULL,
-    supplier_id uuid,
-    staff_id uuid NOT NULL,
-    order_date timestamp with time zone DEFAULT now() NOT NULL,
-    reference_no character varying(50),
-    status character varying(20) DEFAULT 'draft'::character varying NOT NULL,
-    subtotal numeric(15,2) DEFAULT 0 NOT NULL,
-    discount_total numeric(15,2) DEFAULT 0 NOT NULL,
-    tax_total numeric(15,2) DEFAULT 0 NOT NULL,
-    grand_total numeric(15,2) DEFAULT 0 NOT NULL,
-    notes text,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT purchase_orders_status_check CHECK (((status)::text = ANY ((ARRAY['draft'::character varying, 'ordered'::character varying, 'received'::character varying, 'cancelled'::character varying])::text[])))
-);
-
-
-ALTER TABLE extensions.purchase_orders OWNER TO postgres;
-
---
--- Name: registers; Type: TABLE; Schema: extensions; Owner: postgres
---
-
-CREATE TABLE extensions.registers (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    store_id uuid NOT NULL,
-    name character varying(50) NOT NULL,
-    status character varying(20) DEFAULT 'closed'::character varying NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT registers_status_check CHECK (((status)::text = ANY ((ARRAY['open'::character varying, 'closed'::character varying])::text[])))
-);
-
-
-ALTER TABLE extensions.registers OWNER TO postgres;
-
---
--- Name: roles; Type: TABLE; Schema: extensions; Owner: postgres
---
-
-CREATE TABLE extensions.roles (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    name character varying(50) NOT NULL,
-    permissions jsonb DEFAULT '{}'::jsonb NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
-ALTER TABLE extensions.roles OWNER TO postgres;
-
---
--- Name: sale_items; Type: TABLE; Schema: extensions; Owner: postgres
---
-
-CREATE TABLE extensions.sale_items (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    sale_id uuid NOT NULL,
-    variant_id uuid NOT NULL,
-    quantity numeric(15,2) NOT NULL,
-    unit_price numeric(15,2) NOT NULL,
-    cost_price numeric(15,2) NOT NULL,
-    discount numeric(15,2) DEFAULT 0 NOT NULL,
-    tax_category_id uuid,
-    tax_amount numeric(15,2) DEFAULT 0 NOT NULL
-);
-
-
-ALTER TABLE extensions.sale_items OWNER TO postgres;
-
---
--- Name: sale_return_items; Type: TABLE; Schema: extensions; Owner: postgres
---
-
-CREATE TABLE extensions.sale_return_items (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    sale_return_id uuid NOT NULL,
-    sale_item_id uuid NOT NULL,
-    quantity numeric(15,2) NOT NULL,
-    refund_amount numeric(15,2) DEFAULT 0 NOT NULL,
-    restock boolean DEFAULT true NOT NULL
-);
-
-
-ALTER TABLE extensions.sale_return_items OWNER TO postgres;
-
---
--- Name: sale_returns; Type: TABLE; Schema: extensions; Owner: postgres
---
-
-CREATE TABLE extensions.sale_returns (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    sale_id uuid NOT NULL,
-    staff_id uuid NOT NULL,
-    return_date timestamp with time zone DEFAULT now() NOT NULL,
-    total_refund numeric(15,2) DEFAULT 0 NOT NULL,
-    reason text,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
-ALTER TABLE extensions.sale_returns OWNER TO postgres;
-
---
--- Name: sales; Type: TABLE; Schema: extensions; Owner: postgres
---
-
-CREATE TABLE extensions.sales (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    store_id uuid NOT NULL,
-    customer_id uuid,
-    staff_id uuid NOT NULL,
-    register_id uuid,
-    shift_id uuid,
-    sale_number character varying(50) NOT NULL,
-    sale_date timestamp with time zone DEFAULT now() NOT NULL,
-    status character varying(20) DEFAULT 'completed'::character varying NOT NULL,
-    subtotal numeric(15,2) DEFAULT 0 NOT NULL,
-    discount_total numeric(15,2) DEFAULT 0 NOT NULL,
-    tax_total numeric(15,2) DEFAULT 0 NOT NULL,
-    service_charge_total numeric(15,2) DEFAULT 0 NOT NULL,
-    grand_total numeric(15,2) DEFAULT 0 NOT NULL,
-    payment_status character varying(20) DEFAULT 'unpaid'::character varying NOT NULL,
-    void_reason text,
-    voided_by uuid,
-    voided_at timestamp with time zone,
-    notes text,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT sales_payment_status_check CHECK (((payment_status)::text = ANY ((ARRAY['unpaid'::character varying, 'partial'::character varying, 'paid'::character varying])::text[]))),
-    CONSTRAINT sales_status_check CHECK (((status)::text = ANY ((ARRAY['held'::character varying, 'completed'::character varying, 'void'::character varying, 'refunded'::character varying, 'partial_refund'::character varying])::text[])))
-);
-
-
-ALTER TABLE extensions.sales OWNER TO postgres;
-
---
--- Name: shifts; Type: TABLE; Schema: extensions; Owner: postgres
---
-
-CREATE TABLE extensions.shifts (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    register_id uuid NOT NULL,
-    staff_id uuid NOT NULL,
-    opened_at timestamp with time zone DEFAULT now() NOT NULL,
-    closed_at timestamp with time zone,
-    opening_cash numeric(15,2) DEFAULT 0 NOT NULL,
-    expected_cash numeric(15,2),
-    actual_cash numeric(15,2),
-    difference numeric(15,2),
-    notes text
-);
-
-
-ALTER TABLE extensions.shifts OWNER TO postgres;
-
---
--- Name: staff; Type: TABLE; Schema: extensions; Owner: postgres
---
-
-CREATE TABLE extensions.staff (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    role_id uuid NOT NULL,
-    full_name character varying(100) NOT NULL,
-    email character varying(100) NOT NULL,
-    password_hash character varying(255) NOT NULL,
-    pin_hash character varying(255),
-    remember_token character varying(100),
-    active boolean DEFAULT true NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
-ALTER TABLE extensions.staff OWNER TO postgres;
-
---
--- Name: staff_stores; Type: TABLE; Schema: extensions; Owner: postgres
---
-
-CREATE TABLE extensions.staff_stores (
-    staff_id uuid NOT NULL,
-    store_id uuid NOT NULL,
-    is_primary boolean DEFAULT false NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
-ALTER TABLE extensions.staff_stores OWNER TO postgres;
-
---
--- Name: stores; Type: TABLE; Schema: extensions; Owner: postgres
---
-
-CREATE TABLE extensions.stores (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    name character varying(100) NOT NULL,
-    business_type character varying(20) DEFAULT 'retail'::character varying NOT NULL,
-    is_pkp boolean DEFAULT false NOT NULL,
-    npwp character varying(30),
-    address text,
-    city character varying(100),
-    province character varying(100),
-    phone character varying(20),
-    email character varying(100),
-    currency character varying(10) DEFAULT 'IDR'::character varying NOT NULL,
-    timezone character varying(50) DEFAULT 'Asia/Jakarta'::character varying NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT stores_business_type_check CHECK (((business_type)::text = ANY ((ARRAY['retail'::character varying, 'fnb'::character varying, 'service'::character varying])::text[])))
-);
-
-
-ALTER TABLE extensions.stores OWNER TO postgres;
-
---
--- Name: suppliers; Type: TABLE; Schema: extensions; Owner: postgres
---
-
-CREATE TABLE extensions.suppliers (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    name character varying(150) NOT NULL,
-    contact_person character varying(100),
-    phone character varying(20),
-    email character varying(100),
-    address text,
-    active boolean DEFAULT true NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
-ALTER TABLE extensions.suppliers OWNER TO postgres;
-
---
--- Name: tax_categories; Type: TABLE; Schema: extensions; Owner: postgres
---
-
-CREATE TABLE extensions.tax_categories (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    name character varying(100) NOT NULL,
-    tax_type character varying(20) NOT NULL,
-    rate numeric(5,2) DEFAULT 0 NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT tax_categories_tax_type_check CHECK (((tax_type)::text = ANY ((ARRAY['ppn'::character varying, 'ppn_mewah'::character varying, 'pbjt'::character varying, 'exempt'::character varying])::text[])))
-);
-
-
-ALTER TABLE extensions.tax_categories OWNER TO postgres;
+ALTER TABLE public.cache_locks OWNER TO postgres;
 
 --
 -- Name: categories; Type: TABLE; Schema: public; Owner: postgres
@@ -4092,6 +3450,8 @@ CREATE TABLE public.categories (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
+
+ALTER TABLE ONLY public.categories FORCE ROW LEVEL SECURITY;
 
 
 ALTER TABLE public.categories OWNER TO postgres;
@@ -4110,8 +3470,11 @@ CREATE TABLE public.customers (
     loyalty_points integer DEFAULT 0 NOT NULL,
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    deleted_at timestamp with time zone
 );
+
+ALTER TABLE ONLY public.customers FORCE ROW LEVEL SECURITY;
 
 
 ALTER TABLE public.customers OWNER TO postgres;
@@ -4130,9 +3493,13 @@ CREATE TABLE public.discounts (
     end_date timestamp with time zone,
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT chk_discounts_dates CHECK (((start_date IS NULL) OR (end_date IS NULL) OR (start_date <= end_date))),
+    CONSTRAINT chk_discounts_percentage CHECK ((((type)::text <> 'percentage'::text) OR (value <= (100)::numeric))),
     CONSTRAINT chk_discounts_value_positive CHECK ((value >= (0)::numeric)),
     CONSTRAINT discounts_type_check CHECK (((type)::text = ANY ((ARRAY['percentage'::character varying, 'fixed'::character varying])::text[])))
 );
+
+ALTER TABLE ONLY public.discounts FORCE ROW LEVEL SECURITY;
 
 
 ALTER TABLE public.discounts OWNER TO postgres;
@@ -4153,8 +3520,48 @@ CREATE TABLE public.expenses (
     CONSTRAINT chk_expenses_amount_positive CHECK ((amount > (0)::numeric))
 );
 
+ALTER TABLE ONLY public.expenses FORCE ROW LEVEL SECURITY;
+
 
 ALTER TABLE public.expenses OWNER TO postgres;
+
+--
+-- Name: failed_jobs; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.failed_jobs (
+    id bigint NOT NULL,
+    uuid character varying(255) NOT NULL,
+    connection character varying(255) NOT NULL,
+    queue character varying(255) NOT NULL,
+    payload text NOT NULL,
+    exception text NOT NULL,
+    failed_at timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public.failed_jobs OWNER TO postgres;
+
+--
+-- Name: failed_jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.failed_jobs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.failed_jobs_id_seq OWNER TO postgres;
+
+--
+-- Name: failed_jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.failed_jobs_id_seq OWNED BY public.failed_jobs.id;
+
 
 --
 -- Name: inventory_movements; Type: TABLE; Schema: public; Owner: postgres
@@ -4174,6 +3581,8 @@ CREATE TABLE public.inventory_movements (
     CONSTRAINT inventory_movements_movement_type_check CHECK (((movement_type)::text = ANY ((ARRAY['sale'::character varying, 'purchase'::character varying, 'adjustment'::character varying, 'transfer_in'::character varying, 'transfer_out'::character varying, 'return_in'::character varying, 'return_out'::character varying])::text[])))
 );
 
+ALTER TABLE ONLY public.inventory_movements FORCE ROW LEVEL SECURITY;
+
 
 ALTER TABLE public.inventory_movements OWNER TO postgres;
 
@@ -4191,8 +3600,155 @@ CREATE TABLE public.inventory_stock (
     CONSTRAINT chk_inventory_stock_quantity_nonnegative CHECK ((quantity >= (0)::numeric))
 );
 
+ALTER TABLE ONLY public.inventory_stock FORCE ROW LEVEL SECURITY;
+
 
 ALTER TABLE public.inventory_stock OWNER TO postgres;
+
+--
+-- Name: job_batches; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.job_batches (
+    id character varying(255) NOT NULL,
+    name character varying(255) NOT NULL,
+    total_jobs integer NOT NULL,
+    pending_jobs integer NOT NULL,
+    failed_jobs integer NOT NULL,
+    failed_job_ids text NOT NULL,
+    options text,
+    cancelled_at integer,
+    created_at integer NOT NULL,
+    finished_at integer
+);
+
+
+ALTER TABLE public.job_batches OWNER TO postgres;
+
+--
+-- Name: jobs; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.jobs (
+    id bigint NOT NULL,
+    queue character varying(255) NOT NULL,
+    payload text NOT NULL,
+    attempts smallint NOT NULL,
+    reserved_at integer,
+    available_at integer NOT NULL,
+    created_at integer NOT NULL
+);
+
+
+ALTER TABLE public.jobs OWNER TO postgres;
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.jobs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.jobs_id_seq OWNER TO postgres;
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.jobs_id_seq OWNED BY public.jobs.id;
+
+
+--
+-- Name: migrations; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.migrations (
+    id integer NOT NULL,
+    migration character varying(255) NOT NULL,
+    batch integer NOT NULL
+);
+
+
+ALTER TABLE public.migrations OWNER TO postgres;
+
+--
+-- Name: migrations_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.migrations_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.migrations_id_seq OWNER TO postgres;
+
+--
+-- Name: migrations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.migrations_id_seq OWNED BY public.migrations.id;
+
+
+--
+-- Name: passkeys; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.passkeys (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    credential_id character varying(255) NOT NULL,
+    credential json NOT NULL,
+    last_used_at timestamp(0) without time zone,
+    created_at timestamp(0) without time zone,
+    updated_at timestamp(0) without time zone
+);
+
+
+ALTER TABLE public.passkeys OWNER TO postgres;
+
+--
+-- Name: passkeys_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.passkeys_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.passkeys_id_seq OWNER TO postgres;
+
+--
+-- Name: passkeys_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.passkeys_id_seq OWNED BY public.passkeys.id;
+
+
+--
+-- Name: password_reset_tokens; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.password_reset_tokens (
+    email character varying(255) NOT NULL,
+    token character varying(255) NOT NULL,
+    created_at timestamp(0) without time zone
+);
+
+
+ALTER TABLE public.password_reset_tokens OWNER TO postgres;
 
 --
 -- Name: payments; Type: TABLE; Schema: public; Owner: postgres
@@ -4207,6 +3763,8 @@ CREATE TABLE public.payments (
     reference_no character varying(50),
     paid_at timestamp with time zone DEFAULT now() NOT NULL
 );
+
+ALTER TABLE ONLY public.payments FORCE ROW LEVEL SECURITY;
 
 
 ALTER TABLE public.payments OWNER TO postgres;
@@ -4228,6 +3786,8 @@ CREATE TABLE public.product_variants (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
+
+ALTER TABLE ONLY public.product_variants FORCE ROW LEVEL SECURITY;
 
 
 ALTER TABLE public.product_variants OWNER TO postgres;
@@ -4254,6 +3814,8 @@ CREATE TABLE public.products (
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
+ALTER TABLE ONLY public.products FORCE ROW LEVEL SECURITY;
+
 
 ALTER TABLE public.products OWNER TO postgres;
 
@@ -4268,10 +3830,14 @@ CREATE TABLE public.purchase_order_items (
     quantity numeric(15,2) NOT NULL,
     cost_price numeric(15,2) NOT NULL,
     discount numeric(15,2) DEFAULT 0 NOT NULL,
+    received_quantity numeric(15,2) DEFAULT 0,
+    received boolean DEFAULT false,
     CONSTRAINT chk_po_items_cost_price_nonnegative CHECK ((cost_price >= (0)::numeric)),
     CONSTRAINT chk_po_items_discount_nonnegative CHECK ((discount >= (0)::numeric)),
     CONSTRAINT chk_po_items_quantity_positive CHECK ((quantity > (0)::numeric))
 );
+
+ALTER TABLE ONLY public.purchase_order_items FORCE ROW LEVEL SECURITY;
 
 
 ALTER TABLE public.purchase_order_items OWNER TO postgres;
@@ -4298,6 +3864,8 @@ CREATE TABLE public.purchase_orders (
     CONSTRAINT purchase_orders_status_check CHECK (((status)::text = ANY ((ARRAY['draft'::character varying, 'ordered'::character varying, 'received'::character varying, 'cancelled'::character varying])::text[])))
 );
 
+ALTER TABLE ONLY public.purchase_orders FORCE ROW LEVEL SECURITY;
+
 
 ALTER TABLE public.purchase_orders OWNER TO postgres;
 
@@ -4315,6 +3883,8 @@ CREATE TABLE public.registers (
     CONSTRAINT registers_status_check CHECK (((status)::text = ANY ((ARRAY['open'::character varying, 'closed'::character varying])::text[])))
 );
 
+ALTER TABLE ONLY public.registers FORCE ROW LEVEL SECURITY;
+
 
 ALTER TABLE public.registers OWNER TO postgres;
 
@@ -4328,6 +3898,8 @@ CREATE TABLE public.roles (
     permissions jsonb DEFAULT '{}'::jsonb NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
+
+ALTER TABLE ONLY public.roles FORCE ROW LEVEL SECURITY;
 
 
 ALTER TABLE public.roles OWNER TO postgres;
@@ -4344,7 +3916,7 @@ CREATE TABLE public.sale_items (
     unit_price numeric(15,2) NOT NULL,
     cost_price numeric(15,2) NOT NULL,
     discount numeric(15,2) DEFAULT 0 NOT NULL,
-    tax_category_id uuid NOT NULL,
+    tax_category_id uuid,
     tax_amount numeric(15,2) DEFAULT 0 NOT NULL,
     CONSTRAINT chk_sale_items_cost_price_nonnegative CHECK ((cost_price >= (0)::numeric)),
     CONSTRAINT chk_sale_items_discount_nonnegative CHECK ((discount >= (0)::numeric)),
@@ -4352,6 +3924,8 @@ CREATE TABLE public.sale_items (
     CONSTRAINT chk_sale_items_tax_amount_nonnegative CHECK ((tax_amount >= (0)::numeric)),
     CONSTRAINT chk_sale_items_unit_price_nonnegative CHECK ((unit_price >= (0)::numeric))
 );
+
+ALTER TABLE ONLY public.sale_items FORCE ROW LEVEL SECURITY;
 
 
 ALTER TABLE public.sale_items OWNER TO postgres;
@@ -4371,6 +3945,8 @@ CREATE TABLE public.sale_return_items (
     CONSTRAINT chk_return_items_refund_amount_nonnegative CHECK ((refund_amount >= (0)::numeric))
 );
 
+ALTER TABLE ONLY public.sale_return_items FORCE ROW LEVEL SECURITY;
+
 
 ALTER TABLE public.sale_return_items OWNER TO postgres;
 
@@ -4387,6 +3963,8 @@ CREATE TABLE public.sale_returns (
     reason text,
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
+
+ALTER TABLE ONLY public.sale_returns FORCE ROW LEVEL SECURITY;
 
 
 ALTER TABLE public.sale_returns OWNER TO postgres;
@@ -4421,8 +3999,26 @@ CREATE TABLE public.sales (
     CONSTRAINT sales_status_check CHECK (((status)::text = ANY ((ARRAY['held'::character varying, 'completed'::character varying, 'void'::character varying, 'refunded'::character varying, 'partial_refund'::character varying])::text[])))
 );
 
+ALTER TABLE ONLY public.sales FORCE ROW LEVEL SECURITY;
+
 
 ALTER TABLE public.sales OWNER TO postgres;
+
+--
+-- Name: sessions; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.sessions (
+    id character varying(255) NOT NULL,
+    user_id bigint,
+    ip_address character varying(45),
+    user_agent text,
+    payload text NOT NULL,
+    last_activity integer NOT NULL
+);
+
+
+ALTER TABLE public.sessions OWNER TO postgres;
 
 --
 -- Name: shifts; Type: TABLE; Schema: public; Owner: postgres
@@ -4441,28 +4037,10 @@ CREATE TABLE public.shifts (
     notes text
 );
 
+ALTER TABLE ONLY public.shifts FORCE ROW LEVEL SECURITY;
+
 
 ALTER TABLE public.shifts OWNER TO postgres;
-
---
--- Name: staff; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.staff (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    role_id uuid NOT NULL,
-    full_name character varying(100) NOT NULL,
-    email character varying(100) NOT NULL,
-    password_hash character varying(255) NOT NULL,
-    pin_hash character varying(255),
-    remember_token character varying(100),
-    active boolean DEFAULT true NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
-ALTER TABLE public.staff OWNER TO postgres;
 
 --
 -- Name: staff_stores; Type: TABLE; Schema: public; Owner: postgres
@@ -4474,6 +4052,8 @@ CREATE TABLE public.staff_stores (
     is_primary boolean DEFAULT false NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
+
+ALTER TABLE ONLY public.staff_stores FORCE ROW LEVEL SECURITY;
 
 
 ALTER TABLE public.staff_stores OWNER TO postgres;
@@ -4499,8 +4079,11 @@ CREATE TABLE public.stores (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     default_tax_category_id uuid,
+    deleted_at timestamp with time zone,
     CONSTRAINT stores_business_type_check CHECK (((business_type)::text = ANY ((ARRAY['retail'::character varying, 'fnb'::character varying, 'service'::character varying])::text[])))
 );
+
+ALTER TABLE ONLY public.stores FORCE ROW LEVEL SECURITY;
 
 
 ALTER TABLE public.stores OWNER TO postgres;
@@ -4518,8 +4101,11 @@ CREATE TABLE public.suppliers (
     address text,
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    deleted_at timestamp with time zone
 );
+
+ALTER TABLE ONLY public.suppliers FORCE ROW LEVEL SECURITY;
 
 
 ALTER TABLE public.suppliers OWNER TO postgres;
@@ -4540,8 +4126,52 @@ CREATE TABLE public.tax_categories (
     CONSTRAINT tax_categories_tax_type_check CHECK (((tax_type)::text = ANY ((ARRAY['ppn'::character varying, 'ppn_mewah'::character varying, 'pbjt'::character varying, 'exempt'::character varying])::text[])))
 );
 
+ALTER TABLE ONLY public.tax_categories FORCE ROW LEVEL SECURITY;
+
 
 ALTER TABLE public.tax_categories OWNER TO postgres;
+
+--
+-- Name: users; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.users (
+    id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    email character varying(255) NOT NULL,
+    email_verified_at timestamp(0) without time zone,
+    password character varying(255) NOT NULL,
+    remember_token character varying(100),
+    created_at timestamp(0) without time zone,
+    updated_at timestamp(0) without time zone,
+    two_factor_secret text,
+    two_factor_recovery_codes text,
+    two_factor_confirmed_at timestamp(0) without time zone
+);
+
+
+ALTER TABLE public.users OWNER TO postgres;
+
+--
+-- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.users_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.users_id_seq OWNER TO postgres;
+
+--
+-- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
+
 
 --
 -- Name: messages; Type: TABLE; Schema: realtime; Owner: supabase_realtime_admin
@@ -4624,7 +4254,11 @@ CREATE TABLE storage.buckets (
     file_size_limit bigint,
     allowed_mime_types text[],
     owner_id text,
-    type storage.buckettype DEFAULT 'STANDARD'::storage.buckettype NOT NULL
+    type storage.buckettype DEFAULT 'STANDARD'::storage.buckettype NOT NULL,
+    versioning_status text DEFAULT 'DISABLED'::text NOT NULL,
+    CONSTRAINT buckets_versioning_dark_check CHECK ((versioning_status = 'DISABLED'::text)),
+    CONSTRAINT buckets_versioning_standard_only_check CHECK (((type = 'STANDARD'::storage.buckettype) OR (versioning_status = 'DISABLED'::text))),
+    CONSTRAINT buckets_versioning_status_check CHECK ((versioning_status = ANY (ARRAY['DISABLED'::text, 'ENABLED'::text, 'SUSPENDED'::text])))
 );
 
 
@@ -4698,7 +4332,10 @@ CREATE TABLE storage.objects (
     path_tokens text[] GENERATED ALWAYS AS (string_to_array(name, '/'::text)) STORED,
     version text,
     owner_id text,
-    user_metadata jsonb
+    user_metadata jsonb,
+    archived_at timestamp with time zone,
+    is_delete_marker boolean DEFAULT false NOT NULL,
+    is_versioned boolean DEFAULT false NOT NULL
 );
 
 
@@ -4775,6 +4412,41 @@ ALTER TABLE storage.vector_indexes OWNER TO supabase_storage_admin;
 --
 
 ALTER TABLE ONLY auth.refresh_tokens ALTER COLUMN id SET DEFAULT nextval('auth.refresh_tokens_id_seq'::regclass);
+
+
+--
+-- Name: failed_jobs id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.failed_jobs ALTER COLUMN id SET DEFAULT nextval('public.failed_jobs_id_seq'::regclass);
+
+
+--
+-- Name: jobs id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.jobs ALTER COLUMN id SET DEFAULT nextval('public.jobs_id_seq'::regclass);
+
+
+--
+-- Name: migrations id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.migrations ALTER COLUMN id SET DEFAULT nextval('public.migrations_id_seq'::regclass);
+
+
+--
+-- Name: passkeys id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.passkeys ALTER COLUMN id SET DEFAULT nextval('public.passkeys_id_seq'::regclass);
+
+
+--
+-- Name: users id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
 
 
 --
@@ -5042,243 +4714,27 @@ ALTER TABLE ONLY auth.webauthn_credentials
 
 
 --
--- Name: categories categories_pkey; Type: CONSTRAINT; Schema: extensions; Owner: postgres
+-- Name: audit_logs audit_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY extensions.categories
-    ADD CONSTRAINT categories_pkey PRIMARY KEY (id);
-
-
---
--- Name: customers customers_pkey; Type: CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.customers
-    ADD CONSTRAINT customers_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.audit_logs
+    ADD CONSTRAINT audit_logs_pkey PRIMARY KEY (id);
 
 
 --
--- Name: discounts discounts_pkey; Type: CONSTRAINT; Schema: extensions; Owner: postgres
+-- Name: cache_locks cache_locks_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY extensions.discounts
-    ADD CONSTRAINT discounts_pkey PRIMARY KEY (id);
-
-
---
--- Name: expenses expenses_pkey; Type: CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.expenses
-    ADD CONSTRAINT expenses_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.cache_locks
+    ADD CONSTRAINT cache_locks_pkey PRIMARY KEY (key);
 
 
 --
--- Name: inventory_movements inventory_movements_pkey; Type: CONSTRAINT; Schema: extensions; Owner: postgres
+-- Name: cache cache_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY extensions.inventory_movements
-    ADD CONSTRAINT inventory_movements_pkey PRIMARY KEY (id);
-
-
---
--- Name: inventory_stock inventory_stock_pkey; Type: CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.inventory_stock
-    ADD CONSTRAINT inventory_stock_pkey PRIMARY KEY (id);
-
-
---
--- Name: inventory_stock inventory_stock_variant_id_store_id_key; Type: CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.inventory_stock
-    ADD CONSTRAINT inventory_stock_variant_id_store_id_key UNIQUE (variant_id, store_id);
-
-
---
--- Name: payments payments_pkey; Type: CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.payments
-    ADD CONSTRAINT payments_pkey PRIMARY KEY (id);
-
-
---
--- Name: product_variants product_variants_barcode_key; Type: CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.product_variants
-    ADD CONSTRAINT product_variants_barcode_key UNIQUE (barcode);
-
-
---
--- Name: product_variants product_variants_pkey; Type: CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.product_variants
-    ADD CONSTRAINT product_variants_pkey PRIMARY KEY (id);
-
-
---
--- Name: product_variants product_variants_sku_key; Type: CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.product_variants
-    ADD CONSTRAINT product_variants_sku_key UNIQUE (sku);
-
-
---
--- Name: products products_pkey; Type: CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.products
-    ADD CONSTRAINT products_pkey PRIMARY KEY (id);
-
-
---
--- Name: products products_sku_key; Type: CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.products
-    ADD CONSTRAINT products_sku_key UNIQUE (sku);
-
-
---
--- Name: purchase_order_items purchase_order_items_pkey; Type: CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.purchase_order_items
-    ADD CONSTRAINT purchase_order_items_pkey PRIMARY KEY (id);
-
-
---
--- Name: purchase_orders purchase_orders_pkey; Type: CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.purchase_orders
-    ADD CONSTRAINT purchase_orders_pkey PRIMARY KEY (id);
-
-
---
--- Name: registers registers_pkey; Type: CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.registers
-    ADD CONSTRAINT registers_pkey PRIMARY KEY (id);
-
-
---
--- Name: roles roles_name_key; Type: CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.roles
-    ADD CONSTRAINT roles_name_key UNIQUE (name);
-
-
---
--- Name: roles roles_pkey; Type: CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.roles
-    ADD CONSTRAINT roles_pkey PRIMARY KEY (id);
-
-
---
--- Name: sale_items sale_items_pkey; Type: CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.sale_items
-    ADD CONSTRAINT sale_items_pkey PRIMARY KEY (id);
-
-
---
--- Name: sale_return_items sale_return_items_pkey; Type: CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.sale_return_items
-    ADD CONSTRAINT sale_return_items_pkey PRIMARY KEY (id);
-
-
---
--- Name: sale_returns sale_returns_pkey; Type: CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.sale_returns
-    ADD CONSTRAINT sale_returns_pkey PRIMARY KEY (id);
-
-
---
--- Name: sales sales_pkey; Type: CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.sales
-    ADD CONSTRAINT sales_pkey PRIMARY KEY (id);
-
-
---
--- Name: sales sales_store_id_sale_number_key; Type: CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.sales
-    ADD CONSTRAINT sales_store_id_sale_number_key UNIQUE (store_id, sale_number);
-
-
---
--- Name: shifts shifts_pkey; Type: CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.shifts
-    ADD CONSTRAINT shifts_pkey PRIMARY KEY (id);
-
-
---
--- Name: staff staff_email_key; Type: CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.staff
-    ADD CONSTRAINT staff_email_key UNIQUE (email);
-
-
---
--- Name: staff staff_pkey; Type: CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.staff
-    ADD CONSTRAINT staff_pkey PRIMARY KEY (id);
-
-
---
--- Name: staff_stores staff_stores_pkey; Type: CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.staff_stores
-    ADD CONSTRAINT staff_stores_pkey PRIMARY KEY (staff_id, store_id);
-
-
---
--- Name: stores stores_pkey; Type: CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.stores
-    ADD CONSTRAINT stores_pkey PRIMARY KEY (id);
-
-
---
--- Name: suppliers suppliers_pkey; Type: CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.suppliers
-    ADD CONSTRAINT suppliers_pkey PRIMARY KEY (id);
-
-
---
--- Name: tax_categories tax_categories_pkey; Type: CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.tax_categories
-    ADD CONSTRAINT tax_categories_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.cache
+    ADD CONSTRAINT cache_pkey PRIMARY KEY (key);
 
 
 --
@@ -5314,6 +4770,22 @@ ALTER TABLE ONLY public.expenses
 
 
 --
+-- Name: failed_jobs failed_jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.failed_jobs
+    ADD CONSTRAINT failed_jobs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: failed_jobs failed_jobs_uuid_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.failed_jobs
+    ADD CONSTRAINT failed_jobs_uuid_unique UNIQUE (uuid);
+
+
+--
 -- Name: inventory_movements inventory_movements_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -5335,6 +4807,54 @@ ALTER TABLE ONLY public.inventory_stock
 
 ALTER TABLE ONLY public.inventory_stock
     ADD CONSTRAINT inventory_stock_variant_id_store_id_key UNIQUE (variant_id, store_id);
+
+
+--
+-- Name: job_batches job_batches_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.job_batches
+    ADD CONSTRAINT job_batches_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: jobs jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.jobs
+    ADD CONSTRAINT jobs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: migrations migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.migrations
+    ADD CONSTRAINT migrations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: passkeys passkeys_credential_id_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.passkeys
+    ADD CONSTRAINT passkeys_credential_id_unique UNIQUE (credential_id);
+
+
+--
+-- Name: passkeys passkeys_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.passkeys
+    ADD CONSTRAINT passkeys_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: password_reset_tokens password_reset_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.password_reset_tokens
+    ADD CONSTRAINT password_reset_tokens_pkey PRIMARY KEY (email);
 
 
 --
@@ -5466,6 +4986,14 @@ ALTER TABLE ONLY public.sales
 
 
 --
+-- Name: sessions sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.sessions
+    ADD CONSTRAINT sessions_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: shifts shifts_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -5519,6 +5047,22 @@ ALTER TABLE ONLY public.suppliers
 
 ALTER TABLE ONLY public.tax_categories
     ADD CONSTRAINT tax_categories_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: users users_email_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_email_unique UNIQUE (email);
+
+
+--
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
 
 
 --
@@ -6046,73 +5590,52 @@ CREATE INDEX webauthn_credentials_user_id_idx ON auth.webauthn_credentials USING
 
 
 --
--- Name: idx_movements_variant_store; Type: INDEX; Schema: extensions; Owner: postgres
+-- Name: cache_expiration_index; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX idx_movements_variant_store ON extensions.inventory_movements USING btree (variant_id, store_id);
-
-
---
--- Name: idx_payments_sale; Type: INDEX; Schema: extensions; Owner: postgres
---
-
-CREATE INDEX idx_payments_sale ON extensions.payments USING btree (sale_id);
+CREATE INDEX cache_expiration_index ON public.cache USING btree (expiration);
 
 
 --
--- Name: idx_po_items_po; Type: INDEX; Schema: extensions; Owner: postgres
+-- Name: cache_locks_expiration_index; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX idx_po_items_po ON extensions.purchase_order_items USING btree (purchase_order_id);
-
-
---
--- Name: idx_products_category; Type: INDEX; Schema: extensions; Owner: postgres
---
-
-CREATE INDEX idx_products_category ON extensions.products USING btree (category_id);
+CREATE INDEX cache_locks_expiration_index ON public.cache_locks USING btree (expiration);
 
 
 --
--- Name: idx_products_sku; Type: INDEX; Schema: extensions; Owner: postgres
+-- Name: failed_jobs_connection_queue_failed_at_index; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX idx_products_sku ON extensions.products USING btree (sku);
-
-
---
--- Name: idx_sale_items_sale; Type: INDEX; Schema: extensions; Owner: postgres
---
-
-CREATE INDEX idx_sale_items_sale ON extensions.sale_items USING btree (sale_id);
+CREATE INDEX failed_jobs_connection_queue_failed_at_index ON public.failed_jobs USING btree (connection, queue, failed_at);
 
 
 --
--- Name: idx_sales_store_date; Type: INDEX; Schema: extensions; Owner: postgres
+-- Name: idx_audit_logs_table_record; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX idx_sales_store_date ON extensions.sales USING btree (store_id, sale_date);
-
-
---
--- Name: idx_stock_store; Type: INDEX; Schema: extensions; Owner: postgres
---
-
-CREATE INDEX idx_stock_store ON extensions.inventory_stock USING btree (store_id);
+CREATE INDEX idx_audit_logs_table_record ON public.audit_logs USING btree (table_name, record_id);
 
 
 --
--- Name: idx_variants_barcode; Type: INDEX; Schema: extensions; Owner: postgres
+-- Name: idx_categories_parent_id; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX idx_variants_barcode ON extensions.product_variants USING btree (barcode);
+CREATE INDEX idx_categories_parent_id ON public.categories USING btree (parent_id);
 
 
 --
--- Name: idx_variants_product; Type: INDEX; Schema: extensions; Owner: postgres
+-- Name: idx_customers_not_deleted; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX idx_variants_product ON extensions.product_variants USING btree (product_id);
+CREATE INDEX idx_customers_not_deleted ON public.customers USING btree (id) WHERE (deleted_at IS NULL);
+
+
+--
+-- Name: idx_discounts_store_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_discounts_store_id ON public.discounts USING btree (store_id);
 
 
 --
@@ -6141,6 +5664,20 @@ CREATE INDEX idx_expenses_store_id ON public.expenses USING btree (store_id);
 --
 
 CREATE INDEX idx_inventory_movements_created ON public.inventory_movements USING btree (created_at);
+
+
+--
+-- Name: idx_inventory_movements_created_at; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_inventory_movements_created_at ON public.inventory_movements USING btree (created_at);
+
+
+--
+-- Name: idx_inventory_movements_reference; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_inventory_movements_reference ON public.inventory_movements USING btree (reference_table, reference_id);
 
 
 --
@@ -6228,10 +5765,24 @@ CREATE INDEX idx_purchase_orders_supplier_id ON public.purchase_orders USING btr
 
 
 --
+-- Name: idx_registers_store_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_registers_store_id ON public.registers USING btree (store_id);
+
+
+--
 -- Name: idx_sale_items_sale; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX idx_sale_items_sale ON public.sale_items USING btree (sale_id);
+
+
+--
+-- Name: idx_sale_items_tax_category_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_sale_items_tax_category_id ON public.sale_items USING btree (tax_category_id);
 
 
 --
@@ -6312,6 +5863,13 @@ CREATE INDEX idx_shifts_staff_id ON public.shifts USING btree (staff_id);
 
 
 --
+-- Name: idx_staff_not_deleted; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_staff_not_deleted ON public.staff USING btree (id) WHERE (deleted_at IS NULL);
+
+
+--
 -- Name: idx_staff_role_id; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -6333,6 +5891,27 @@ CREATE INDEX idx_stock_store ON public.inventory_stock USING btree (store_id);
 
 
 --
+-- Name: idx_stores_default_tax_category_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_stores_default_tax_category_id ON public.stores USING btree (default_tax_category_id);
+
+
+--
+-- Name: idx_stores_not_deleted; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_stores_not_deleted ON public.stores USING btree (id) WHERE (deleted_at IS NULL);
+
+
+--
+-- Name: idx_suppliers_not_deleted; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_suppliers_not_deleted ON public.suppliers USING btree (id) WHERE (deleted_at IS NULL);
+
+
+--
 -- Name: idx_variants_active; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -6351,6 +5930,34 @@ CREATE INDEX idx_variants_barcode ON public.product_variants USING btree (barcod
 --
 
 CREATE INDEX idx_variants_product ON public.product_variants USING btree (product_id);
+
+
+--
+-- Name: jobs_queue_index; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX jobs_queue_index ON public.jobs USING btree (queue);
+
+
+--
+-- Name: passkeys_user_id_index; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX passkeys_user_id_index ON public.passkeys USING btree (user_id);
+
+
+--
+-- Name: sessions_last_activity_index; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX sessions_last_activity_index ON public.sessions USING btree (last_activity);
+
+
+--
+-- Name: sessions_user_id_index; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX sessions_user_id_index ON public.sessions USING btree (user_id);
 
 
 --
@@ -6438,80 +6045,38 @@ CREATE UNIQUE INDEX vector_indexes_name_bucket_id_idx ON storage.vector_indexes 
 
 
 --
--- Name: inventory_movements trg_apply_inventory_movement; Type: TRIGGER; Schema: extensions; Owner: postgres
---
-
-CREATE TRIGGER trg_apply_inventory_movement AFTER INSERT ON extensions.inventory_movements FOR EACH ROW EXECUTE FUNCTION extensions.apply_inventory_movement();
-
-
---
--- Name: categories trg_categories_updated_at; Type: TRIGGER; Schema: extensions; Owner: postgres
---
-
-CREATE TRIGGER trg_categories_updated_at BEFORE UPDATE ON extensions.categories FOR EACH ROW EXECUTE FUNCTION extensions.set_updated_at();
-
-
---
--- Name: customers trg_customers_updated_at; Type: TRIGGER; Schema: extensions; Owner: postgres
---
-
-CREATE TRIGGER trg_customers_updated_at BEFORE UPDATE ON extensions.customers FOR EACH ROW EXECUTE FUNCTION extensions.set_updated_at();
-
-
---
--- Name: purchase_orders trg_po_updated_at; Type: TRIGGER; Schema: extensions; Owner: postgres
---
-
-CREATE TRIGGER trg_po_updated_at BEFORE UPDATE ON extensions.purchase_orders FOR EACH ROW EXECUTE FUNCTION extensions.set_updated_at();
-
-
---
--- Name: products trg_products_updated_at; Type: TRIGGER; Schema: extensions; Owner: postgres
---
-
-CREATE TRIGGER trg_products_updated_at BEFORE UPDATE ON extensions.products FOR EACH ROW EXECUTE FUNCTION extensions.set_updated_at();
-
-
---
--- Name: sales trg_sales_updated_at; Type: TRIGGER; Schema: extensions; Owner: postgres
---
-
-CREATE TRIGGER trg_sales_updated_at BEFORE UPDATE ON extensions.sales FOR EACH ROW EXECUTE FUNCTION extensions.set_updated_at();
-
-
---
--- Name: staff trg_staff_updated_at; Type: TRIGGER; Schema: extensions; Owner: postgres
---
-
-CREATE TRIGGER trg_staff_updated_at BEFORE UPDATE ON extensions.staff FOR EACH ROW EXECUTE FUNCTION extensions.set_updated_at();
-
-
---
--- Name: stores trg_stores_updated_at; Type: TRIGGER; Schema: extensions; Owner: postgres
---
-
-CREATE TRIGGER trg_stores_updated_at BEFORE UPDATE ON extensions.stores FOR EACH ROW EXECUTE FUNCTION extensions.set_updated_at();
-
-
---
--- Name: suppliers trg_suppliers_updated_at; Type: TRIGGER; Schema: extensions; Owner: postgres
---
-
-CREATE TRIGGER trg_suppliers_updated_at BEFORE UPDATE ON extensions.suppliers FOR EACH ROW EXECUTE FUNCTION extensions.set_updated_at();
-
-
---
--- Name: product_variants trg_variants_updated_at; Type: TRIGGER; Schema: extensions; Owner: postgres
---
-
-CREATE TRIGGER trg_variants_updated_at BEFORE UPDATE ON extensions.product_variants FOR EACH ROW EXECUTE FUNCTION extensions.set_updated_at();
-
-
---
 -- Name: inventory_movements trg_apply_inventory_movement; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
 CREATE TRIGGER trg_apply_inventory_movement AFTER INSERT ON public.inventory_movements FOR EACH ROW EXECUTE FUNCTION public.apply_inventory_movement();
+
+
+--
+-- Name: discounts trg_audit_discounts; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_audit_discounts AFTER UPDATE OF value, type ON public.discounts FOR EACH ROW EXECUTE FUNCTION public.log_sensitive_changes();
+
+
+--
+-- Name: product_variants trg_audit_product_variants; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_audit_product_variants AFTER UPDATE OF selling_price ON public.product_variants FOR EACH ROW EXECUTE FUNCTION public.log_sensitive_changes();
+
+
+--
+-- Name: tax_categories trg_audit_tax_categories; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_audit_tax_categories AFTER INSERT OR DELETE OR UPDATE ON public.tax_categories FOR EACH ROW EXECUTE FUNCTION public.log_sensitive_changes();
+
+
+--
+-- Name: sale_items trg_calc_tax_amount; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_calc_tax_amount BEFORE INSERT OR UPDATE OF unit_price, quantity, discount, tax_category_id ON public.sale_items FOR EACH ROW EXECUTE FUNCTION public.calc_tax_amount();
 
 
 --
@@ -6526,6 +6091,13 @@ CREATE TRIGGER trg_categories_updated_at BEFORE UPDATE ON public.categories FOR 
 --
 
 CREATE TRIGGER trg_check_tax_category_sale_items BEFORE INSERT OR UPDATE OF tax_category_id ON public.sale_items FOR EACH ROW EXECUTE FUNCTION public.check_tax_category_for_store();
+
+
+--
+-- Name: sale_return_items trg_create_return_movement; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_create_return_movement AFTER INSERT ON public.sale_return_items FOR EACH ROW EXECUTE FUNCTION public.create_return_movement();
 
 
 --
@@ -6547,6 +6119,13 @@ CREATE TRIGGER trg_po_updated_at BEFORE UPDATE ON public.purchase_orders FOR EAC
 --
 
 CREATE TRIGGER trg_products_updated_at BEFORE UPDATE ON public.products FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- Name: sale_items trg_recalc_sale_totals; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_recalc_sale_totals AFTER INSERT OR DELETE OR UPDATE ON public.sale_items FOR EACH ROW EXECUTE FUNCTION public.recalc_sale_totals();
 
 
 --
@@ -6764,310 +6343,6 @@ ALTER TABLE ONLY auth.webauthn_credentials
 
 
 --
--- Name: categories categories_parent_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.categories
-    ADD CONSTRAINT categories_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES extensions.categories(id);
-
-
---
--- Name: discounts discounts_store_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.discounts
-    ADD CONSTRAINT discounts_store_id_fkey FOREIGN KEY (store_id) REFERENCES extensions.stores(id);
-
-
---
--- Name: expenses expenses_staff_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.expenses
-    ADD CONSTRAINT expenses_staff_id_fkey FOREIGN KEY (staff_id) REFERENCES extensions.staff(id);
-
-
---
--- Name: expenses expenses_store_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.expenses
-    ADD CONSTRAINT expenses_store_id_fkey FOREIGN KEY (store_id) REFERENCES extensions.stores(id);
-
-
---
--- Name: inventory_movements inventory_movements_staff_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.inventory_movements
-    ADD CONSTRAINT inventory_movements_staff_id_fkey FOREIGN KEY (staff_id) REFERENCES extensions.staff(id);
-
-
---
--- Name: inventory_movements inventory_movements_store_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.inventory_movements
-    ADD CONSTRAINT inventory_movements_store_id_fkey FOREIGN KEY (store_id) REFERENCES extensions.stores(id);
-
-
---
--- Name: inventory_movements inventory_movements_variant_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.inventory_movements
-    ADD CONSTRAINT inventory_movements_variant_id_fkey FOREIGN KEY (variant_id) REFERENCES extensions.product_variants(id);
-
-
---
--- Name: inventory_stock inventory_stock_store_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.inventory_stock
-    ADD CONSTRAINT inventory_stock_store_id_fkey FOREIGN KEY (store_id) REFERENCES extensions.stores(id) ON DELETE CASCADE;
-
-
---
--- Name: inventory_stock inventory_stock_variant_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.inventory_stock
-    ADD CONSTRAINT inventory_stock_variant_id_fkey FOREIGN KEY (variant_id) REFERENCES extensions.product_variants(id) ON DELETE CASCADE;
-
-
---
--- Name: payments payments_sale_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.payments
-    ADD CONSTRAINT payments_sale_id_fkey FOREIGN KEY (sale_id) REFERENCES extensions.sales(id) ON DELETE CASCADE;
-
-
---
--- Name: product_variants product_variants_product_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.product_variants
-    ADD CONSTRAINT product_variants_product_id_fkey FOREIGN KEY (product_id) REFERENCES extensions.products(id) ON DELETE CASCADE;
-
-
---
--- Name: products products_category_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.products
-    ADD CONSTRAINT products_category_id_fkey FOREIGN KEY (category_id) REFERENCES extensions.categories(id);
-
-
---
--- Name: products products_supplier_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.products
-    ADD CONSTRAINT products_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES extensions.suppliers(id);
-
-
---
--- Name: products products_tax_category_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.products
-    ADD CONSTRAINT products_tax_category_id_fkey FOREIGN KEY (tax_category_id) REFERENCES extensions.tax_categories(id);
-
-
---
--- Name: purchase_order_items purchase_order_items_purchase_order_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.purchase_order_items
-    ADD CONSTRAINT purchase_order_items_purchase_order_id_fkey FOREIGN KEY (purchase_order_id) REFERENCES extensions.purchase_orders(id) ON DELETE CASCADE;
-
-
---
--- Name: purchase_order_items purchase_order_items_variant_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.purchase_order_items
-    ADD CONSTRAINT purchase_order_items_variant_id_fkey FOREIGN KEY (variant_id) REFERENCES extensions.product_variants(id);
-
-
---
--- Name: purchase_orders purchase_orders_staff_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.purchase_orders
-    ADD CONSTRAINT purchase_orders_staff_id_fkey FOREIGN KEY (staff_id) REFERENCES extensions.staff(id);
-
-
---
--- Name: purchase_orders purchase_orders_store_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.purchase_orders
-    ADD CONSTRAINT purchase_orders_store_id_fkey FOREIGN KEY (store_id) REFERENCES extensions.stores(id);
-
-
---
--- Name: purchase_orders purchase_orders_supplier_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.purchase_orders
-    ADD CONSTRAINT purchase_orders_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES extensions.suppliers(id);
-
-
---
--- Name: registers registers_store_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.registers
-    ADD CONSTRAINT registers_store_id_fkey FOREIGN KEY (store_id) REFERENCES extensions.stores(id);
-
-
---
--- Name: sale_items sale_items_sale_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.sale_items
-    ADD CONSTRAINT sale_items_sale_id_fkey FOREIGN KEY (sale_id) REFERENCES extensions.sales(id) ON DELETE CASCADE;
-
-
---
--- Name: sale_items sale_items_tax_category_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.sale_items
-    ADD CONSTRAINT sale_items_tax_category_id_fkey FOREIGN KEY (tax_category_id) REFERENCES extensions.tax_categories(id);
-
-
---
--- Name: sale_items sale_items_variant_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.sale_items
-    ADD CONSTRAINT sale_items_variant_id_fkey FOREIGN KEY (variant_id) REFERENCES extensions.product_variants(id);
-
-
---
--- Name: sale_return_items sale_return_items_sale_item_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.sale_return_items
-    ADD CONSTRAINT sale_return_items_sale_item_id_fkey FOREIGN KEY (sale_item_id) REFERENCES extensions.sale_items(id);
-
-
---
--- Name: sale_return_items sale_return_items_sale_return_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.sale_return_items
-    ADD CONSTRAINT sale_return_items_sale_return_id_fkey FOREIGN KEY (sale_return_id) REFERENCES extensions.sale_returns(id) ON DELETE CASCADE;
-
-
---
--- Name: sale_returns sale_returns_sale_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.sale_returns
-    ADD CONSTRAINT sale_returns_sale_id_fkey FOREIGN KEY (sale_id) REFERENCES extensions.sales(id);
-
-
---
--- Name: sale_returns sale_returns_staff_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.sale_returns
-    ADD CONSTRAINT sale_returns_staff_id_fkey FOREIGN KEY (staff_id) REFERENCES extensions.staff(id);
-
-
---
--- Name: sales sales_customer_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.sales
-    ADD CONSTRAINT sales_customer_id_fkey FOREIGN KEY (customer_id) REFERENCES extensions.customers(id);
-
-
---
--- Name: sales sales_register_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.sales
-    ADD CONSTRAINT sales_register_id_fkey FOREIGN KEY (register_id) REFERENCES extensions.registers(id);
-
-
---
--- Name: sales sales_shift_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.sales
-    ADD CONSTRAINT sales_shift_id_fkey FOREIGN KEY (shift_id) REFERENCES extensions.shifts(id);
-
-
---
--- Name: sales sales_staff_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.sales
-    ADD CONSTRAINT sales_staff_id_fkey FOREIGN KEY (staff_id) REFERENCES extensions.staff(id);
-
-
---
--- Name: sales sales_store_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.sales
-    ADD CONSTRAINT sales_store_id_fkey FOREIGN KEY (store_id) REFERENCES extensions.stores(id);
-
-
---
--- Name: sales sales_voided_by_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.sales
-    ADD CONSTRAINT sales_voided_by_fkey FOREIGN KEY (voided_by) REFERENCES extensions.staff(id);
-
-
---
--- Name: shifts shifts_register_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.shifts
-    ADD CONSTRAINT shifts_register_id_fkey FOREIGN KEY (register_id) REFERENCES extensions.registers(id);
-
-
---
--- Name: shifts shifts_staff_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.shifts
-    ADD CONSTRAINT shifts_staff_id_fkey FOREIGN KEY (staff_id) REFERENCES extensions.staff(id);
-
-
---
--- Name: staff staff_role_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.staff
-    ADD CONSTRAINT staff_role_id_fkey FOREIGN KEY (role_id) REFERENCES extensions.roles(id);
-
-
---
--- Name: staff_stores staff_stores_staff_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.staff_stores
-    ADD CONSTRAINT staff_stores_staff_id_fkey FOREIGN KEY (staff_id) REFERENCES extensions.staff(id) ON DELETE CASCADE;
-
-
---
--- Name: staff_stores staff_stores_store_id_fkey; Type: FK CONSTRAINT; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE ONLY extensions.staff_stores
-    ADD CONSTRAINT staff_stores_store_id_fkey FOREIGN KEY (store_id) REFERENCES extensions.stores(id) ON DELETE CASCADE;
-
-
---
 -- Name: categories categories_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -7140,11 +6415,19 @@ ALTER TABLE ONLY public.inventory_stock
 
 
 --
+-- Name: passkeys passkeys_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.passkeys
+    ADD CONSTRAINT passkeys_user_id_foreign FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: payments payments_sale_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.payments
-    ADD CONSTRAINT payments_sale_id_fkey FOREIGN KEY (sale_id) REFERENCES public.sales(id) ON DELETE CASCADE;
+    ADD CONSTRAINT payments_sale_id_fkey FOREIGN KEY (sale_id) REFERENCES public.sales(id) ON DELETE RESTRICT;
 
 
 --
@@ -7232,7 +6515,7 @@ ALTER TABLE ONLY public.registers
 --
 
 ALTER TABLE ONLY public.sale_items
-    ADD CONSTRAINT sale_items_sale_id_fkey FOREIGN KEY (sale_id) REFERENCES public.sales(id) ON DELETE CASCADE;
+    ADD CONSTRAINT sale_items_sale_id_fkey FOREIGN KEY (sale_id) REFERENCES public.sales(id) ON DELETE RESTRICT;
 
 
 --
@@ -7516,378 +6799,10 @@ ALTER TABLE auth.sso_providers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE auth.users ENABLE ROW LEVEL SECURITY;
 
 --
--- Name: products catalog_read; Type: POLICY; Schema: extensions; Owner: postgres
+-- Name: audit_logs; Type: ROW SECURITY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY catalog_read ON extensions.products FOR SELECT USING ((extensions.get_current_staff_id() IS NOT NULL));
-
-
---
--- Name: products catalog_write; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY catalog_write ON extensions.products USING (extensions.is_admin()) WITH CHECK (extensions.is_admin());
-
-
---
--- Name: categories; Type: ROW SECURITY; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE extensions.categories ENABLE ROW LEVEL SECURITY;
-
---
--- Name: categories categories_read; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY categories_read ON extensions.categories FOR SELECT USING ((extensions.get_current_staff_id() IS NOT NULL));
-
-
---
--- Name: categories categories_write; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY categories_write ON extensions.categories USING (extensions.is_admin()) WITH CHECK (extensions.is_admin());
-
-
---
--- Name: customers; Type: ROW SECURITY; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE extensions.customers ENABLE ROW LEVEL SECURITY;
-
---
--- Name: customers customers_all; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY customers_all ON extensions.customers USING ((extensions.get_current_staff_id() IS NOT NULL)) WITH CHECK ((extensions.get_current_staff_id() IS NOT NULL));
-
-
---
--- Name: discounts; Type: ROW SECURITY; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE extensions.discounts ENABLE ROW LEVEL SECURITY;
-
---
--- Name: discounts discounts_scoped; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY discounts_scoped ON extensions.discounts USING (((store_id IS NULL) OR extensions.is_staff_of_store(store_id))) WITH CHECK (((store_id IS NULL) OR extensions.is_admin()));
-
-
---
--- Name: expenses; Type: ROW SECURITY; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE extensions.expenses ENABLE ROW LEVEL SECURITY;
-
---
--- Name: expenses expenses_scoped; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY expenses_scoped ON extensions.expenses USING (extensions.is_staff_of_store(store_id)) WITH CHECK (extensions.is_staff_of_store(store_id));
-
-
---
--- Name: inventory_movements; Type: ROW SECURITY; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE extensions.inventory_movements ENABLE ROW LEVEL SECURITY;
-
---
--- Name: inventory_movements inventory_movements_scoped; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY inventory_movements_scoped ON extensions.inventory_movements USING (extensions.is_staff_of_store(store_id)) WITH CHECK (extensions.is_staff_of_store(store_id));
-
-
---
--- Name: inventory_stock; Type: ROW SECURITY; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE extensions.inventory_stock ENABLE ROW LEVEL SECURITY;
-
---
--- Name: inventory_stock inventory_stock_scoped; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY inventory_stock_scoped ON extensions.inventory_stock USING (extensions.is_staff_of_store(store_id)) WITH CHECK (extensions.is_staff_of_store(store_id));
-
-
---
--- Name: payments; Type: ROW SECURITY; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE extensions.payments ENABLE ROW LEVEL SECURITY;
-
---
--- Name: payments payments_scoped; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY payments_scoped ON extensions.payments USING ((EXISTS ( SELECT 1
-   FROM extensions.sales
-  WHERE ((sales.id = payments.sale_id) AND extensions.is_staff_of_store(sales.store_id))))) WITH CHECK ((EXISTS ( SELECT 1
-   FROM extensions.sales
-  WHERE ((sales.id = payments.sale_id) AND extensions.is_staff_of_store(sales.store_id)))));
-
-
---
--- Name: product_variants; Type: ROW SECURITY; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE extensions.product_variants ENABLE ROW LEVEL SECURITY;
-
---
--- Name: products; Type: ROW SECURITY; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE extensions.products ENABLE ROW LEVEL SECURITY;
-
---
--- Name: purchase_order_items; Type: ROW SECURITY; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE extensions.purchase_order_items ENABLE ROW LEVEL SECURITY;
-
---
--- Name: purchase_order_items purchase_order_items_scoped; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY purchase_order_items_scoped ON extensions.purchase_order_items USING ((EXISTS ( SELECT 1
-   FROM extensions.purchase_orders po
-  WHERE ((po.id = purchase_order_items.purchase_order_id) AND extensions.is_staff_of_store(po.store_id))))) WITH CHECK ((EXISTS ( SELECT 1
-   FROM extensions.purchase_orders po
-  WHERE ((po.id = purchase_order_items.purchase_order_id) AND extensions.is_staff_of_store(po.store_id)))));
-
-
---
--- Name: purchase_orders; Type: ROW SECURITY; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE extensions.purchase_orders ENABLE ROW LEVEL SECURITY;
-
---
--- Name: purchase_orders purchase_orders_scoped; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY purchase_orders_scoped ON extensions.purchase_orders USING (extensions.is_staff_of_store(store_id)) WITH CHECK (extensions.is_staff_of_store(store_id));
-
-
---
--- Name: registers; Type: ROW SECURITY; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE extensions.registers ENABLE ROW LEVEL SECURITY;
-
---
--- Name: registers registers_scoped; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY registers_scoped ON extensions.registers USING (extensions.is_staff_of_store(store_id)) WITH CHECK (extensions.is_staff_of_store(store_id));
-
-
---
--- Name: roles; Type: ROW SECURITY; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE extensions.roles ENABLE ROW LEVEL SECURITY;
-
---
--- Name: sale_items; Type: ROW SECURITY; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE extensions.sale_items ENABLE ROW LEVEL SECURITY;
-
---
--- Name: sale_items sale_items_scoped; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY sale_items_scoped ON extensions.sale_items USING ((EXISTS ( SELECT 1
-   FROM extensions.sales
-  WHERE ((sales.id = sale_items.sale_id) AND extensions.is_staff_of_store(sales.store_id))))) WITH CHECK ((EXISTS ( SELECT 1
-   FROM extensions.sales
-  WHERE ((sales.id = sale_items.sale_id) AND extensions.is_staff_of_store(sales.store_id)))));
-
-
---
--- Name: sale_return_items; Type: ROW SECURITY; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE extensions.sale_return_items ENABLE ROW LEVEL SECURITY;
-
---
--- Name: sale_return_items sale_return_items_scoped; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY sale_return_items_scoped ON extensions.sale_return_items USING ((EXISTS ( SELECT 1
-   FROM (extensions.sale_returns sr
-     JOIN extensions.sales s ON ((s.id = sr.sale_id)))
-  WHERE ((sr.id = sale_return_items.sale_return_id) AND extensions.is_staff_of_store(s.store_id))))) WITH CHECK ((EXISTS ( SELECT 1
-   FROM (extensions.sale_returns sr
-     JOIN extensions.sales s ON ((s.id = sr.sale_id)))
-  WHERE ((sr.id = sale_return_items.sale_return_id) AND extensions.is_staff_of_store(s.store_id)))));
-
-
---
--- Name: sale_returns; Type: ROW SECURITY; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE extensions.sale_returns ENABLE ROW LEVEL SECURITY;
-
---
--- Name: sale_returns sale_returns_scoped; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY sale_returns_scoped ON extensions.sale_returns USING ((EXISTS ( SELECT 1
-   FROM extensions.sales
-  WHERE ((sales.id = sale_returns.sale_id) AND extensions.is_staff_of_store(sales.store_id))))) WITH CHECK ((EXISTS ( SELECT 1
-   FROM extensions.sales
-  WHERE ((sales.id = sale_returns.sale_id) AND extensions.is_staff_of_store(sales.store_id)))));
-
-
---
--- Name: sales; Type: ROW SECURITY; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE extensions.sales ENABLE ROW LEVEL SECURITY;
-
---
--- Name: sales sales_scoped; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY sales_scoped ON extensions.sales USING (extensions.is_staff_of_store(store_id)) WITH CHECK (extensions.is_staff_of_store(store_id));
-
-
---
--- Name: shifts; Type: ROW SECURITY; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE extensions.shifts ENABLE ROW LEVEL SECURITY;
-
---
--- Name: shifts shifts_scoped; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY shifts_scoped ON extensions.shifts USING ((EXISTS ( SELECT 1
-   FROM extensions.registers r
-  WHERE ((r.id = shifts.register_id) AND extensions.is_staff_of_store(r.store_id))))) WITH CHECK ((EXISTS ( SELECT 1
-   FROM extensions.registers r
-  WHERE ((r.id = shifts.register_id) AND extensions.is_staff_of_store(r.store_id)))));
-
-
---
--- Name: staff; Type: ROW SECURITY; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE extensions.staff ENABLE ROW LEVEL SECURITY;
-
---
--- Name: staff staff_admin_write; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY staff_admin_write ON extensions.staff USING (extensions.is_admin()) WITH CHECK (extensions.is_admin());
-
-
---
--- Name: staff staff_self_or_admin; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY staff_self_or_admin ON extensions.staff FOR SELECT USING (((id = extensions.get_current_staff_id()) OR extensions.is_admin()));
-
-
---
--- Name: staff_stores; Type: ROW SECURITY; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE extensions.staff_stores ENABLE ROW LEVEL SECURITY;
-
---
--- Name: staff_stores staff_stores_admin_write; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY staff_stores_admin_write ON extensions.staff_stores USING (extensions.is_admin()) WITH CHECK (extensions.is_admin());
-
-
---
--- Name: staff_stores staff_stores_visible; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY staff_stores_visible ON extensions.staff_stores FOR SELECT USING (((staff_id = extensions.get_current_staff_id()) OR extensions.is_admin()));
-
-
---
--- Name: stores; Type: ROW SECURITY; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE extensions.stores ENABLE ROW LEVEL SECURITY;
-
---
--- Name: stores stores_read; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY stores_read ON extensions.stores FOR SELECT USING (extensions.is_staff_of_store(id));
-
-
---
--- Name: stores stores_write; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY stores_write ON extensions.stores USING (extensions.is_admin()) WITH CHECK (extensions.is_admin());
-
-
---
--- Name: suppliers; Type: ROW SECURITY; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE extensions.suppliers ENABLE ROW LEVEL SECURITY;
-
---
--- Name: suppliers suppliers_read; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY suppliers_read ON extensions.suppliers FOR SELECT USING ((extensions.get_current_staff_id() IS NOT NULL));
-
-
---
--- Name: suppliers suppliers_write; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY suppliers_write ON extensions.suppliers USING (extensions.is_admin()) WITH CHECK (extensions.is_admin());
-
-
---
--- Name: tax_categories; Type: ROW SECURITY; Schema: extensions; Owner: postgres
---
-
-ALTER TABLE extensions.tax_categories ENABLE ROW LEVEL SECURITY;
-
---
--- Name: tax_categories tax_categories_read; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY tax_categories_read ON extensions.tax_categories FOR SELECT USING ((extensions.get_current_staff_id() IS NOT NULL));
-
-
---
--- Name: tax_categories tax_categories_write; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY tax_categories_write ON extensions.tax_categories USING (extensions.is_admin()) WITH CHECK (extensions.is_admin());
-
-
---
--- Name: product_variants variants_read; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY variants_read ON extensions.product_variants FOR SELECT USING ((extensions.get_current_staff_id() IS NOT NULL));
-
-
---
--- Name: product_variants variants_write; Type: POLICY; Schema: extensions; Owner: postgres
---
-
-CREATE POLICY variants_write ON extensions.product_variants USING (extensions.is_admin()) WITH CHECK (extensions.is_admin());
-
+ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: products catalog_read; Type: POLICY; Schema: public; Owner: postgres
@@ -8020,7 +6935,7 @@ ALTER TABLE public.inventory_stock ENABLE ROW LEVEL SECURITY;
 -- Name: inventory_stock inventory_stock_read; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY inventory_stock_read ON public.inventory_stock FOR SELECT USING ((public.get_current_staff_id() IS NOT NULL));
+CREATE POLICY inventory_stock_read ON public.inventory_stock FOR SELECT USING (public.is_staff_of_store(store_id));
 
 
 --
@@ -8388,20 +7303,11 @@ GRANT USAGE ON SCHEMA auth TO postgres;
 
 
 --
--- Name: SCHEMA extensions; Type: ACL; Schema: -; Owner: postgres
---
-
-GRANT USAGE ON SCHEMA extensions TO anon;
-GRANT USAGE ON SCHEMA extensions TO authenticated;
-GRANT USAGE ON SCHEMA extensions TO service_role;
-GRANT ALL ON SCHEMA extensions TO dashboard_user;
-
-
---
 -- Name: SCHEMA public; Type: ACL; Schema: -; Owner: postgres
 --
 
 REVOKE USAGE ON SCHEMA public FROM PUBLIC;
+GRANT USAGE ON SCHEMA public TO tkpos_app;
 
 
 --
@@ -8465,493 +7371,6 @@ GRANT ALL ON FUNCTION auth.uid() TO dashboard_user;
 
 
 --
--- Name: FUNCTION armor(bytea); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.armor(bytea) FROM postgres;
-GRANT ALL ON FUNCTION extensions.armor(bytea) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.armor(bytea) TO dashboard_user;
-
-
---
--- Name: FUNCTION armor(bytea, text[], text[]); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.armor(bytea, text[], text[]) FROM postgres;
-GRANT ALL ON FUNCTION extensions.armor(bytea, text[], text[]) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.armor(bytea, text[], text[]) TO dashboard_user;
-
-
---
--- Name: FUNCTION crypt(text, text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.crypt(text, text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.crypt(text, text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.crypt(text, text) TO dashboard_user;
-
-
---
--- Name: FUNCTION dearmor(text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.dearmor(text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.dearmor(text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.dearmor(text) TO dashboard_user;
-
-
---
--- Name: FUNCTION decrypt(bytea, bytea, text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.decrypt(bytea, bytea, text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.decrypt(bytea, bytea, text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.decrypt(bytea, bytea, text) TO dashboard_user;
-
-
---
--- Name: FUNCTION decrypt_iv(bytea, bytea, bytea, text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.decrypt_iv(bytea, bytea, bytea, text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.decrypt_iv(bytea, bytea, bytea, text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.decrypt_iv(bytea, bytea, bytea, text) TO dashboard_user;
-
-
---
--- Name: FUNCTION digest(bytea, text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.digest(bytea, text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.digest(bytea, text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.digest(bytea, text) TO dashboard_user;
-
-
---
--- Name: FUNCTION digest(text, text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.digest(text, text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.digest(text, text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.digest(text, text) TO dashboard_user;
-
-
---
--- Name: FUNCTION encrypt(bytea, bytea, text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.encrypt(bytea, bytea, text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.encrypt(bytea, bytea, text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.encrypt(bytea, bytea, text) TO dashboard_user;
-
-
---
--- Name: FUNCTION encrypt_iv(bytea, bytea, bytea, text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.encrypt_iv(bytea, bytea, bytea, text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.encrypt_iv(bytea, bytea, bytea, text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.encrypt_iv(bytea, bytea, bytea, text) TO dashboard_user;
-
-
---
--- Name: FUNCTION gen_random_bytes(integer); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.gen_random_bytes(integer) FROM postgres;
-GRANT ALL ON FUNCTION extensions.gen_random_bytes(integer) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.gen_random_bytes(integer) TO dashboard_user;
-
-
---
--- Name: FUNCTION gen_random_uuid(); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.gen_random_uuid() FROM postgres;
-GRANT ALL ON FUNCTION extensions.gen_random_uuid() TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.gen_random_uuid() TO dashboard_user;
-
-
---
--- Name: FUNCTION gen_salt(text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.gen_salt(text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.gen_salt(text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.gen_salt(text) TO dashboard_user;
-
-
---
--- Name: FUNCTION gen_salt(text, integer); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.gen_salt(text, integer) FROM postgres;
-GRANT ALL ON FUNCTION extensions.gen_salt(text, integer) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.gen_salt(text, integer) TO dashboard_user;
-
-
---
--- Name: FUNCTION grant_pg_cron_access(); Type: ACL; Schema: extensions; Owner: supabase_admin
---
-
-REVOKE ALL ON FUNCTION extensions.grant_pg_cron_access() FROM supabase_admin;
-GRANT ALL ON FUNCTION extensions.grant_pg_cron_access() TO supabase_admin WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.grant_pg_cron_access() TO dashboard_user;
-
-
---
--- Name: FUNCTION grant_pg_graphql_access(); Type: ACL; Schema: extensions; Owner: supabase_admin
---
-
-GRANT ALL ON FUNCTION extensions.grant_pg_graphql_access() TO postgres WITH GRANT OPTION;
-
-
---
--- Name: FUNCTION grant_pg_net_access(); Type: ACL; Schema: extensions; Owner: supabase_admin
---
-
-REVOKE ALL ON FUNCTION extensions.grant_pg_net_access() FROM supabase_admin;
-GRANT ALL ON FUNCTION extensions.grant_pg_net_access() TO supabase_admin WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.grant_pg_net_access() TO dashboard_user;
-
-
---
--- Name: FUNCTION hmac(bytea, bytea, text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.hmac(bytea, bytea, text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.hmac(bytea, bytea, text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.hmac(bytea, bytea, text) TO dashboard_user;
-
-
---
--- Name: FUNCTION hmac(text, text, text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.hmac(text, text, text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.hmac(text, text, text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.hmac(text, text, text) TO dashboard_user;
-
-
---
--- Name: FUNCTION pg_stat_statements(showtext boolean, OUT userid oid, OUT dbid oid, OUT toplevel boolean, OUT queryid bigint, OUT query text, OUT plans bigint, OUT total_plan_time double precision, OUT min_plan_time double precision, OUT max_plan_time double precision, OUT mean_plan_time double precision, OUT stddev_plan_time double precision, OUT calls bigint, OUT total_exec_time double precision, OUT min_exec_time double precision, OUT max_exec_time double precision, OUT mean_exec_time double precision, OUT stddev_exec_time double precision, OUT rows bigint, OUT shared_blks_hit bigint, OUT shared_blks_read bigint, OUT shared_blks_dirtied bigint, OUT shared_blks_written bigint, OUT local_blks_hit bigint, OUT local_blks_read bigint, OUT local_blks_dirtied bigint, OUT local_blks_written bigint, OUT temp_blks_read bigint, OUT temp_blks_written bigint, OUT shared_blk_read_time double precision, OUT shared_blk_write_time double precision, OUT local_blk_read_time double precision, OUT local_blk_write_time double precision, OUT temp_blk_read_time double precision, OUT temp_blk_write_time double precision, OUT wal_records bigint, OUT wal_fpi bigint, OUT wal_bytes numeric, OUT jit_functions bigint, OUT jit_generation_time double precision, OUT jit_inlining_count bigint, OUT jit_inlining_time double precision, OUT jit_optimization_count bigint, OUT jit_optimization_time double precision, OUT jit_emission_count bigint, OUT jit_emission_time double precision, OUT jit_deform_count bigint, OUT jit_deform_time double precision, OUT stats_since timestamp with time zone, OUT minmax_stats_since timestamp with time zone); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.pg_stat_statements(showtext boolean, OUT userid oid, OUT dbid oid, OUT toplevel boolean, OUT queryid bigint, OUT query text, OUT plans bigint, OUT total_plan_time double precision, OUT min_plan_time double precision, OUT max_plan_time double precision, OUT mean_plan_time double precision, OUT stddev_plan_time double precision, OUT calls bigint, OUT total_exec_time double precision, OUT min_exec_time double precision, OUT max_exec_time double precision, OUT mean_exec_time double precision, OUT stddev_exec_time double precision, OUT rows bigint, OUT shared_blks_hit bigint, OUT shared_blks_read bigint, OUT shared_blks_dirtied bigint, OUT shared_blks_written bigint, OUT local_blks_hit bigint, OUT local_blks_read bigint, OUT local_blks_dirtied bigint, OUT local_blks_written bigint, OUT temp_blks_read bigint, OUT temp_blks_written bigint, OUT shared_blk_read_time double precision, OUT shared_blk_write_time double precision, OUT local_blk_read_time double precision, OUT local_blk_write_time double precision, OUT temp_blk_read_time double precision, OUT temp_blk_write_time double precision, OUT wal_records bigint, OUT wal_fpi bigint, OUT wal_bytes numeric, OUT jit_functions bigint, OUT jit_generation_time double precision, OUT jit_inlining_count bigint, OUT jit_inlining_time double precision, OUT jit_optimization_count bigint, OUT jit_optimization_time double precision, OUT jit_emission_count bigint, OUT jit_emission_time double precision, OUT jit_deform_count bigint, OUT jit_deform_time double precision, OUT stats_since timestamp with time zone, OUT minmax_stats_since timestamp with time zone) FROM postgres;
-GRANT ALL ON FUNCTION extensions.pg_stat_statements(showtext boolean, OUT userid oid, OUT dbid oid, OUT toplevel boolean, OUT queryid bigint, OUT query text, OUT plans bigint, OUT total_plan_time double precision, OUT min_plan_time double precision, OUT max_plan_time double precision, OUT mean_plan_time double precision, OUT stddev_plan_time double precision, OUT calls bigint, OUT total_exec_time double precision, OUT min_exec_time double precision, OUT max_exec_time double precision, OUT mean_exec_time double precision, OUT stddev_exec_time double precision, OUT rows bigint, OUT shared_blks_hit bigint, OUT shared_blks_read bigint, OUT shared_blks_dirtied bigint, OUT shared_blks_written bigint, OUT local_blks_hit bigint, OUT local_blks_read bigint, OUT local_blks_dirtied bigint, OUT local_blks_written bigint, OUT temp_blks_read bigint, OUT temp_blks_written bigint, OUT shared_blk_read_time double precision, OUT shared_blk_write_time double precision, OUT local_blk_read_time double precision, OUT local_blk_write_time double precision, OUT temp_blk_read_time double precision, OUT temp_blk_write_time double precision, OUT wal_records bigint, OUT wal_fpi bigint, OUT wal_bytes numeric, OUT jit_functions bigint, OUT jit_generation_time double precision, OUT jit_inlining_count bigint, OUT jit_inlining_time double precision, OUT jit_optimization_count bigint, OUT jit_optimization_time double precision, OUT jit_emission_count bigint, OUT jit_emission_time double precision, OUT jit_deform_count bigint, OUT jit_deform_time double precision, OUT stats_since timestamp with time zone, OUT minmax_stats_since timestamp with time zone) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.pg_stat_statements(showtext boolean, OUT userid oid, OUT dbid oid, OUT toplevel boolean, OUT queryid bigint, OUT query text, OUT plans bigint, OUT total_plan_time double precision, OUT min_plan_time double precision, OUT max_plan_time double precision, OUT mean_plan_time double precision, OUT stddev_plan_time double precision, OUT calls bigint, OUT total_exec_time double precision, OUT min_exec_time double precision, OUT max_exec_time double precision, OUT mean_exec_time double precision, OUT stddev_exec_time double precision, OUT rows bigint, OUT shared_blks_hit bigint, OUT shared_blks_read bigint, OUT shared_blks_dirtied bigint, OUT shared_blks_written bigint, OUT local_blks_hit bigint, OUT local_blks_read bigint, OUT local_blks_dirtied bigint, OUT local_blks_written bigint, OUT temp_blks_read bigint, OUT temp_blks_written bigint, OUT shared_blk_read_time double precision, OUT shared_blk_write_time double precision, OUT local_blk_read_time double precision, OUT local_blk_write_time double precision, OUT temp_blk_read_time double precision, OUT temp_blk_write_time double precision, OUT wal_records bigint, OUT wal_fpi bigint, OUT wal_bytes numeric, OUT jit_functions bigint, OUT jit_generation_time double precision, OUT jit_inlining_count bigint, OUT jit_inlining_time double precision, OUT jit_optimization_count bigint, OUT jit_optimization_time double precision, OUT jit_emission_count bigint, OUT jit_emission_time double precision, OUT jit_deform_count bigint, OUT jit_deform_time double precision, OUT stats_since timestamp with time zone, OUT minmax_stats_since timestamp with time zone) TO dashboard_user;
-
-
---
--- Name: FUNCTION pg_stat_statements_info(OUT dealloc bigint, OUT stats_reset timestamp with time zone); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.pg_stat_statements_info(OUT dealloc bigint, OUT stats_reset timestamp with time zone) FROM postgres;
-GRANT ALL ON FUNCTION extensions.pg_stat_statements_info(OUT dealloc bigint, OUT stats_reset timestamp with time zone) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.pg_stat_statements_info(OUT dealloc bigint, OUT stats_reset timestamp with time zone) TO dashboard_user;
-
-
---
--- Name: FUNCTION pg_stat_statements_reset(userid oid, dbid oid, queryid bigint, minmax_only boolean); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.pg_stat_statements_reset(userid oid, dbid oid, queryid bigint, minmax_only boolean) FROM postgres;
-GRANT ALL ON FUNCTION extensions.pg_stat_statements_reset(userid oid, dbid oid, queryid bigint, minmax_only boolean) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.pg_stat_statements_reset(userid oid, dbid oid, queryid bigint, minmax_only boolean) TO dashboard_user;
-
-
---
--- Name: FUNCTION pgp_armor_headers(text, OUT key text, OUT value text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.pgp_armor_headers(text, OUT key text, OUT value text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.pgp_armor_headers(text, OUT key text, OUT value text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.pgp_armor_headers(text, OUT key text, OUT value text) TO dashboard_user;
-
-
---
--- Name: FUNCTION pgp_key_id(bytea); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.pgp_key_id(bytea) FROM postgres;
-GRANT ALL ON FUNCTION extensions.pgp_key_id(bytea) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.pgp_key_id(bytea) TO dashboard_user;
-
-
---
--- Name: FUNCTION pgp_pub_decrypt(bytea, bytea); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.pgp_pub_decrypt(bytea, bytea) FROM postgres;
-GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt(bytea, bytea) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt(bytea, bytea) TO dashboard_user;
-
-
---
--- Name: FUNCTION pgp_pub_decrypt(bytea, bytea, text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.pgp_pub_decrypt(bytea, bytea, text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt(bytea, bytea, text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt(bytea, bytea, text) TO dashboard_user;
-
-
---
--- Name: FUNCTION pgp_pub_decrypt(bytea, bytea, text, text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.pgp_pub_decrypt(bytea, bytea, text, text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt(bytea, bytea, text, text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt(bytea, bytea, text, text) TO dashboard_user;
-
-
---
--- Name: FUNCTION pgp_pub_decrypt_bytea(bytea, bytea); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.pgp_pub_decrypt_bytea(bytea, bytea) FROM postgres;
-GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt_bytea(bytea, bytea) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt_bytea(bytea, bytea) TO dashboard_user;
-
-
---
--- Name: FUNCTION pgp_pub_decrypt_bytea(bytea, bytea, text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.pgp_pub_decrypt_bytea(bytea, bytea, text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt_bytea(bytea, bytea, text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt_bytea(bytea, bytea, text) TO dashboard_user;
-
-
---
--- Name: FUNCTION pgp_pub_decrypt_bytea(bytea, bytea, text, text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.pgp_pub_decrypt_bytea(bytea, bytea, text, text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt_bytea(bytea, bytea, text, text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.pgp_pub_decrypt_bytea(bytea, bytea, text, text) TO dashboard_user;
-
-
---
--- Name: FUNCTION pgp_pub_encrypt(text, bytea); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.pgp_pub_encrypt(text, bytea) FROM postgres;
-GRANT ALL ON FUNCTION extensions.pgp_pub_encrypt(text, bytea) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.pgp_pub_encrypt(text, bytea) TO dashboard_user;
-
-
---
--- Name: FUNCTION pgp_pub_encrypt(text, bytea, text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.pgp_pub_encrypt(text, bytea, text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.pgp_pub_encrypt(text, bytea, text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.pgp_pub_encrypt(text, bytea, text) TO dashboard_user;
-
-
---
--- Name: FUNCTION pgp_pub_encrypt_bytea(bytea, bytea); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.pgp_pub_encrypt_bytea(bytea, bytea) FROM postgres;
-GRANT ALL ON FUNCTION extensions.pgp_pub_encrypt_bytea(bytea, bytea) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.pgp_pub_encrypt_bytea(bytea, bytea) TO dashboard_user;
-
-
---
--- Name: FUNCTION pgp_pub_encrypt_bytea(bytea, bytea, text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.pgp_pub_encrypt_bytea(bytea, bytea, text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.pgp_pub_encrypt_bytea(bytea, bytea, text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.pgp_pub_encrypt_bytea(bytea, bytea, text) TO dashboard_user;
-
-
---
--- Name: FUNCTION pgp_sym_decrypt(bytea, text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.pgp_sym_decrypt(bytea, text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.pgp_sym_decrypt(bytea, text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.pgp_sym_decrypt(bytea, text) TO dashboard_user;
-
-
---
--- Name: FUNCTION pgp_sym_decrypt(bytea, text, text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.pgp_sym_decrypt(bytea, text, text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.pgp_sym_decrypt(bytea, text, text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.pgp_sym_decrypt(bytea, text, text) TO dashboard_user;
-
-
---
--- Name: FUNCTION pgp_sym_decrypt_bytea(bytea, text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.pgp_sym_decrypt_bytea(bytea, text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.pgp_sym_decrypt_bytea(bytea, text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.pgp_sym_decrypt_bytea(bytea, text) TO dashboard_user;
-
-
---
--- Name: FUNCTION pgp_sym_decrypt_bytea(bytea, text, text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.pgp_sym_decrypt_bytea(bytea, text, text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.pgp_sym_decrypt_bytea(bytea, text, text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.pgp_sym_decrypt_bytea(bytea, text, text) TO dashboard_user;
-
-
---
--- Name: FUNCTION pgp_sym_encrypt(text, text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.pgp_sym_encrypt(text, text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.pgp_sym_encrypt(text, text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.pgp_sym_encrypt(text, text) TO dashboard_user;
-
-
---
--- Name: FUNCTION pgp_sym_encrypt(text, text, text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.pgp_sym_encrypt(text, text, text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.pgp_sym_encrypt(text, text, text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.pgp_sym_encrypt(text, text, text) TO dashboard_user;
-
-
---
--- Name: FUNCTION pgp_sym_encrypt_bytea(bytea, text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.pgp_sym_encrypt_bytea(bytea, text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.pgp_sym_encrypt_bytea(bytea, text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.pgp_sym_encrypt_bytea(bytea, text) TO dashboard_user;
-
-
---
--- Name: FUNCTION pgp_sym_encrypt_bytea(bytea, text, text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.pgp_sym_encrypt_bytea(bytea, text, text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.pgp_sym_encrypt_bytea(bytea, text, text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.pgp_sym_encrypt_bytea(bytea, text, text) TO dashboard_user;
-
-
---
--- Name: FUNCTION pgrst_ddl_watch(); Type: ACL; Schema: extensions; Owner: supabase_admin
---
-
-GRANT ALL ON FUNCTION extensions.pgrst_ddl_watch() TO postgres WITH GRANT OPTION;
-
-
---
--- Name: FUNCTION pgrst_drop_watch(); Type: ACL; Schema: extensions; Owner: supabase_admin
---
-
-GRANT ALL ON FUNCTION extensions.pgrst_drop_watch() TO postgres WITH GRANT OPTION;
-
-
---
--- Name: FUNCTION set_graphql_placeholder(); Type: ACL; Schema: extensions; Owner: supabase_admin
---
-
-GRANT ALL ON FUNCTION extensions.set_graphql_placeholder() TO postgres WITH GRANT OPTION;
-
-
---
--- Name: FUNCTION uuid_generate_v1(); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.uuid_generate_v1() FROM postgres;
-GRANT ALL ON FUNCTION extensions.uuid_generate_v1() TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.uuid_generate_v1() TO dashboard_user;
-
-
---
--- Name: FUNCTION uuid_generate_v1mc(); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.uuid_generate_v1mc() FROM postgres;
-GRANT ALL ON FUNCTION extensions.uuid_generate_v1mc() TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.uuid_generate_v1mc() TO dashboard_user;
-
-
---
--- Name: FUNCTION uuid_generate_v3(namespace uuid, name text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.uuid_generate_v3(namespace uuid, name text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.uuid_generate_v3(namespace uuid, name text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.uuid_generate_v3(namespace uuid, name text) TO dashboard_user;
-
-
---
--- Name: FUNCTION uuid_generate_v4(); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.uuid_generate_v4() FROM postgres;
-GRANT ALL ON FUNCTION extensions.uuid_generate_v4() TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.uuid_generate_v4() TO dashboard_user;
-
-
---
--- Name: FUNCTION uuid_generate_v5(namespace uuid, name text); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.uuid_generate_v5(namespace uuid, name text) FROM postgres;
-GRANT ALL ON FUNCTION extensions.uuid_generate_v5(namespace uuid, name text) TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.uuid_generate_v5(namespace uuid, name text) TO dashboard_user;
-
-
---
--- Name: FUNCTION uuid_nil(); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.uuid_nil() FROM postgres;
-GRANT ALL ON FUNCTION extensions.uuid_nil() TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.uuid_nil() TO dashboard_user;
-
-
---
--- Name: FUNCTION uuid_ns_dns(); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.uuid_ns_dns() FROM postgres;
-GRANT ALL ON FUNCTION extensions.uuid_ns_dns() TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.uuid_ns_dns() TO dashboard_user;
-
-
---
--- Name: FUNCTION uuid_ns_oid(); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.uuid_ns_oid() FROM postgres;
-GRANT ALL ON FUNCTION extensions.uuid_ns_oid() TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.uuid_ns_oid() TO dashboard_user;
-
-
---
--- Name: FUNCTION uuid_ns_url(); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.uuid_ns_url() FROM postgres;
-GRANT ALL ON FUNCTION extensions.uuid_ns_url() TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.uuid_ns_url() TO dashboard_user;
-
-
---
--- Name: FUNCTION uuid_ns_x500(); Type: ACL; Schema: extensions; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION extensions.uuid_ns_x500() FROM postgres;
-GRANT ALL ON FUNCTION extensions.uuid_ns_x500() TO postgres WITH GRANT OPTION;
-GRANT ALL ON FUNCTION extensions.uuid_ns_x500() TO dashboard_user;
-
-
---
 -- Name: FUNCTION graphql("operationName" text, query text, variables jsonb, extensions jsonb); Type: ACL; Schema: graphql_public; Owner: supabase_admin
 --
 
@@ -8974,6 +7393,58 @@ GRANT ALL ON FUNCTION pg_catalog.pg_reload_conf() TO postgres WITH GRANT OPTION;
 
 REVOKE ALL ON FUNCTION pgbouncer.get_auth(p_usename text) FROM PUBLIC;
 GRANT ALL ON FUNCTION pgbouncer.get_auth(p_usename text) TO pgbouncer;
+
+
+--
+-- Name: TABLE staff; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.staff TO tkpos_app;
+
+
+--
+-- Name: FUNCTION auth_get_staff_by_email(p_email text); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.auth_get_staff_by_email(p_email text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.auth_get_staff_by_email(p_email text) TO tkpos_app;
+
+
+--
+-- Name: FUNCTION auth_get_staff_by_id(p_id uuid); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.auth_get_staff_by_id(p_id uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.auth_get_staff_by_id(p_id uuid) TO tkpos_app;
+
+
+--
+-- Name: FUNCTION auth_get_staff_by_remember_token(p_id uuid, p_token text); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.auth_get_staff_by_remember_token(p_id uuid, p_token text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.auth_get_staff_by_remember_token(p_id uuid, p_token text) TO tkpos_app;
+
+
+--
+-- Name: FUNCTION get_current_staff_id(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.get_current_staff_id() TO tkpos_app;
+
+
+--
+-- Name: FUNCTION is_admin(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.is_admin() TO tkpos_app;
+
+
+--
+-- Name: FUNCTION is_staff_of_store(p_store_id uuid); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.is_staff_of_store(p_store_id uuid) TO tkpos_app;
 
 
 --
@@ -9354,21 +7825,269 @@ GRANT ALL ON TABLE auth.webauthn_credentials TO dashboard_user;
 
 
 --
--- Name: TABLE pg_stat_statements; Type: ACL; Schema: extensions; Owner: postgres
+-- Name: TABLE audit_logs; Type: ACL; Schema: public; Owner: postgres
 --
 
-REVOKE ALL ON TABLE extensions.pg_stat_statements FROM postgres;
-GRANT ALL ON TABLE extensions.pg_stat_statements TO postgres WITH GRANT OPTION;
-GRANT ALL ON TABLE extensions.pg_stat_statements TO dashboard_user;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.audit_logs TO tkpos_app;
 
 
 --
--- Name: TABLE pg_stat_statements_info; Type: ACL; Schema: extensions; Owner: postgres
+-- Name: TABLE cache; Type: ACL; Schema: public; Owner: postgres
 --
 
-REVOKE ALL ON TABLE extensions.pg_stat_statements_info FROM postgres;
-GRANT ALL ON TABLE extensions.pg_stat_statements_info TO postgres WITH GRANT OPTION;
-GRANT ALL ON TABLE extensions.pg_stat_statements_info TO dashboard_user;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.cache TO tkpos_app;
+
+
+--
+-- Name: TABLE cache_locks; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.cache_locks TO tkpos_app;
+
+
+--
+-- Name: TABLE categories; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.categories TO tkpos_app;
+
+
+--
+-- Name: TABLE customers; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.customers TO tkpos_app;
+
+
+--
+-- Name: TABLE discounts; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.discounts TO tkpos_app;
+
+
+--
+-- Name: TABLE expenses; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.expenses TO tkpos_app;
+
+
+--
+-- Name: TABLE failed_jobs; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.failed_jobs TO tkpos_app;
+
+
+--
+-- Name: SEQUENCE failed_jobs_id_seq; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,USAGE ON SEQUENCE public.failed_jobs_id_seq TO tkpos_app;
+
+
+--
+-- Name: TABLE inventory_movements; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.inventory_movements TO tkpos_app;
+
+
+--
+-- Name: TABLE inventory_stock; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.inventory_stock TO tkpos_app;
+
+
+--
+-- Name: TABLE job_batches; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.job_batches TO tkpos_app;
+
+
+--
+-- Name: TABLE jobs; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.jobs TO tkpos_app;
+
+
+--
+-- Name: SEQUENCE jobs_id_seq; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,USAGE ON SEQUENCE public.jobs_id_seq TO tkpos_app;
+
+
+--
+-- Name: TABLE migrations; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.migrations TO tkpos_app;
+
+
+--
+-- Name: SEQUENCE migrations_id_seq; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,USAGE ON SEQUENCE public.migrations_id_seq TO tkpos_app;
+
+
+--
+-- Name: TABLE passkeys; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.passkeys TO tkpos_app;
+
+
+--
+-- Name: SEQUENCE passkeys_id_seq; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,USAGE ON SEQUENCE public.passkeys_id_seq TO tkpos_app;
+
+
+--
+-- Name: TABLE password_reset_tokens; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.password_reset_tokens TO tkpos_app;
+
+
+--
+-- Name: TABLE payments; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.payments TO tkpos_app;
+
+
+--
+-- Name: TABLE product_variants; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.product_variants TO tkpos_app;
+
+
+--
+-- Name: TABLE products; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.products TO tkpos_app;
+
+
+--
+-- Name: TABLE purchase_order_items; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.purchase_order_items TO tkpos_app;
+
+
+--
+-- Name: TABLE purchase_orders; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.purchase_orders TO tkpos_app;
+
+
+--
+-- Name: TABLE registers; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.registers TO tkpos_app;
+
+
+--
+-- Name: TABLE roles; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.roles TO tkpos_app;
+
+
+--
+-- Name: TABLE sale_items; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.sale_items TO tkpos_app;
+
+
+--
+-- Name: TABLE sale_return_items; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.sale_return_items TO tkpos_app;
+
+
+--
+-- Name: TABLE sale_returns; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.sale_returns TO tkpos_app;
+
+
+--
+-- Name: TABLE sales; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.sales TO tkpos_app;
+
+
+--
+-- Name: TABLE sessions; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.sessions TO tkpos_app;
+
+
+--
+-- Name: TABLE shifts; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.shifts TO tkpos_app;
+
+
+--
+-- Name: TABLE staff_stores; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.staff_stores TO tkpos_app;
+
+
+--
+-- Name: TABLE stores; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.stores TO tkpos_app;
+
+
+--
+-- Name: TABLE suppliers; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.suppliers TO tkpos_app;
+
+
+--
+-- Name: TABLE tax_categories; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.tax_categories TO tkpos_app;
+
+
+--
+-- Name: TABLE users; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.users TO tkpos_app;
+
+
+--
+-- Name: SEQUENCE users_id_seq; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,USAGE ON SEQUENCE public.users_id_seq TO tkpos_app;
 
 
 --
@@ -9522,27 +8241,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_auth_admin IN SCHEMA auth GRANT ALL O
 
 
 --
--- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: extensions; Owner: supabase_admin
---
-
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA extensions GRANT ALL ON SEQUENCES TO postgres WITH GRANT OPTION;
-
-
---
--- Name: DEFAULT PRIVILEGES FOR FUNCTIONS; Type: DEFAULT ACL; Schema: extensions; Owner: supabase_admin
---
-
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA extensions GRANT ALL ON FUNCTIONS TO postgres WITH GRANT OPTION;
-
-
---
--- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: extensions; Owner: supabase_admin
---
-
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA extensions GRANT ALL ON TABLES TO postgres WITH GRANT OPTION;
-
-
---
 -- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: graphql; Owner: supabase_admin
 --
 
@@ -9603,6 +8301,20 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA graphql_public GRANT 
 
 
 --
+-- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: public; Owner: postgres
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT,USAGE ON SEQUENCES TO tkpos_app;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: public; Owner: postgres
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT,INSERT,DELETE,UPDATE ON TABLES TO tkpos_app;
+
+
+--
 -- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: realtime; Owner: supabase_admin
 --
 
@@ -9657,72 +8369,8 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage GRANT ALL ON TABLES
 
 
 --
--- Name: issue_graphql_placeholder; Type: EVENT TRIGGER; Schema: -; Owner: supabase_admin
---
-
-CREATE EVENT TRIGGER issue_graphql_placeholder ON sql_drop
-         WHEN TAG IN ('DROP EXTENSION')
-   EXECUTE FUNCTION extensions.set_graphql_placeholder();
-
-
-ALTER EVENT TRIGGER issue_graphql_placeholder OWNER TO supabase_admin;
-
---
--- Name: issue_pg_cron_access; Type: EVENT TRIGGER; Schema: -; Owner: supabase_admin
---
-
-CREATE EVENT TRIGGER issue_pg_cron_access ON ddl_command_end
-         WHEN TAG IN ('CREATE EXTENSION')
-   EXECUTE FUNCTION extensions.grant_pg_cron_access();
-
-
-ALTER EVENT TRIGGER issue_pg_cron_access OWNER TO supabase_admin;
-
---
--- Name: issue_pg_graphql_access; Type: EVENT TRIGGER; Schema: -; Owner: supabase_admin
---
-
-CREATE EVENT TRIGGER issue_pg_graphql_access ON ddl_command_end
-         WHEN TAG IN ('CREATE EXTENSION')
-   EXECUTE FUNCTION extensions.grant_pg_graphql_access();
-
-
-ALTER EVENT TRIGGER issue_pg_graphql_access OWNER TO supabase_admin;
-
---
--- Name: issue_pg_net_access; Type: EVENT TRIGGER; Schema: -; Owner: supabase_admin
---
-
-CREATE EVENT TRIGGER issue_pg_net_access ON ddl_command_end
-         WHEN TAG IN ('CREATE EXTENSION')
-   EXECUTE FUNCTION extensions.grant_pg_net_access();
-
-
-ALTER EVENT TRIGGER issue_pg_net_access OWNER TO supabase_admin;
-
---
--- Name: pgrst_ddl_watch; Type: EVENT TRIGGER; Schema: -; Owner: supabase_admin
---
-
-CREATE EVENT TRIGGER pgrst_ddl_watch ON ddl_command_end
-   EXECUTE FUNCTION extensions.pgrst_ddl_watch();
-
-
-ALTER EVENT TRIGGER pgrst_ddl_watch OWNER TO supabase_admin;
-
---
--- Name: pgrst_drop_watch; Type: EVENT TRIGGER; Schema: -; Owner: supabase_admin
---
-
-CREATE EVENT TRIGGER pgrst_drop_watch ON sql_drop
-   EXECUTE FUNCTION extensions.pgrst_drop_watch();
-
-
-ALTER EVENT TRIGGER pgrst_drop_watch OWNER TO supabase_admin;
-
---
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 1K8L3J9rKjuKSKMSOW43geq2nqZd38FEd28CJez9p5B6f6MJwdaq2a4MpLAdgO9
+\unrestrict j7WjsU2Ouj9atEafpBcrRNiYgxgHDZgPADMnGQ9Ujh4nNLPj5tzfQKE54COaUcW
 

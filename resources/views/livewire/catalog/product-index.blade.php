@@ -1,15 +1,9 @@
 <div class="py-6">
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-            <h1 class="text-h2 font-black text-neutral-900 tracking-tight">Produk</h1>
-            <p class="text-body text-neutral-500 mt-1">Kelola daftar produk dan varian yang tersedia di sistem kasir Anda.</p>
-        </div>
-        <div>
-            <x-ui.button variant="primary" icon="plus" href="{{ route('catalog.products.create') }}" wire:navigate>
-                Tambah Produk
-            </x-ui.button>
-        </div>
-    </div>
+    <x-ui.page-header title="Produk" description="Kelola daftar produk dan varian yang tersedia di sistem kasir Anda.">
+        <x-ui.button variant="primary" icon="plus" href="{{ route('catalog.products.create') }}" wire:navigate>
+            Tambah Produk
+        </x-ui.button>
+    </x-ui.page-header>
 
     <x-ui.card class="p-0 overflow-hidden border-neutral-200">
         <div class="p-4 border-b border-neutral-200 bg-neutral-50/50">
@@ -39,13 +33,13 @@
                                 @endif
                             </div>
                             <div>
-                                <span class="font-bold text-neutral-900 block">{{ $product->name }}</span>
+                                <span class="font-medium text-neutral-800 block">{{ $product->name }}</span>
                                 <span class="text-[11px] font-medium text-neutral-500 uppercase">{{ count($product->variants) }} Varian</span>
                             </div>
                         </div>
                     </x-ui.table.td>
                     <x-ui.table.td>
-                        <span class="font-mono text-xs px-2 py-1 bg-neutral-100 rounded-md text-neutral-600 font-semibold">{{ $product->sku ?? '-' }}</span>
+                        <span class="font-mono text-xs px-2 py-1 bg-neutral-100 rounded-md text-neutral-600 font-medium">{{ $product->sku ?? '-' }}</span>
                     </x-ui.table.td>
                     <x-ui.table.td>
                         <span class="inline-flex items-center gap-1.5 text-body-sm text-neutral-600 font-medium">

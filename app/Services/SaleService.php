@@ -6,6 +6,7 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Payment;
 use App\Models\InventoryMovement;
+use App\Models\Discount;
 use App\Models\InventoryStock;
 use App\Models\ProductVariant;
 use App\Models\Staff;
@@ -41,84 +42,101 @@ class SaleService
             throw new InvalidArgumentException("Keranjang belanja kosong.");
         }
 
-        $subtotal = 0;
-        $discountTotal = 0;
-        $taxTotal = 0;
-        
-        $saleItemsData = [];
-        $inventoryMovementsData = [];
-
-        foreach ($items as $variantId => $itemData) {
-            $variant = ProductVariant::with(['product', 'product.taxCategory'])->find($variantId);
-            if (!$variant) {
-                throw new Exception("Produk variant dengan ID $variantId tidak ditemukan.");
-            }
-
-            $quantity = $itemData['quantity'];
-            $unitPrice = $itemData['price'] ?? $variant->selling_price;
-            $discount = floatval($itemData['discount'] ?? 0);
-
-            // Validasi Stok
-            $stock = InventoryStock::where('store_id', $store->id)
-                ->where('variant_id', $variantId)
-                ->first();
-                
-            if (!$stock || $stock->quantity < $quantity) {
-                throw new Exception("Stok tidak mencukupi untuk: " . $variant->product->name);
-            }
-
-            // Tentukan Tax Category
-            $taxCategoryId = $variant->product->tax_category_id ?? $store->default_tax_category_id;
-            $taxAmount = 0;
+        return DB::transaction(function () use ($data, $staff, $store, $items) {
+            $subtotal = 0;
+            $discountTotal = 0;
+            $taxTotal = 0;
             
-            if ($taxCategoryId) {
-                $taxCategory = TaxCategory::find($taxCategoryId);
-                if ($taxCategory) {
-                    $this->validateTaxCombination($store, $taxCategory);
-                    
-                    // Hitung PPN/PBJT
-                    $amountBeforeTax = ($unitPrice * $quantity) - $discount;
-                    $taxAmount = $amountBeforeTax * ($taxCategory->rate / 100);
-                } else {
-                    $taxCategoryId = null;
+            $saleItemsData = [];
+            $inventoryMovementsData = [];
+
+            foreach ($items as $variantId => $itemData) {
+                $variant = ProductVariant::with(['product', 'product.taxCategory'])->find($variantId);
+                if (!$variant) {
+                    throw new Exception("Produk variant dengan ID $variantId tidak ditemukan.");
                 }
+
+                $quantity = $itemData['quantity'];
+                $unitPrice = $variant->selling_price; // Always use database price
+
+                $discount = 0;
+                if (!empty($itemData['discount_id'])) {
+                    $discountRecord = Discount::where('id', $itemData['discount_id'])->where('active', true)->first();
+                    if ($discountRecord) {
+                        if ($discountRecord->type === 'percentage') {
+                            $discount = ($unitPrice * $quantity) * ($discountRecord->value / 100);
+                        } else {
+                            $discount = $discountRecord->value;
+                        }
+                    }
+                } elseif (!empty($itemData['discount'])) {
+                    // Fallback, but enforce limits
+                    $discount = min(floatval($itemData['discount']), $unitPrice * $quantity);
+                }
+
+                // Validasi Stok (dengan Row Lock) - NOW INSIDE TRANSACTION
+                $stock = InventoryStock::where('store_id', $store->id)
+                    ->where('variant_id', $variantId)
+                    ->lockForUpdate()
+                    ->first();
+                    
+                if (!$stock || $stock->quantity < $quantity) {
+                    throw new Exception("Stok tidak mencukupi untuk: " . $variant->product->name);
+                }
+
+                // Kurangi stok langsung untuk menghindari race condition
+                $stock->decrement('quantity', $quantity);
+
+                // Tentukan Tax Category
+                $taxCategoryId = $variant->product->tax_category_id ?? $store->default_tax_category_id;
+                $taxAmount = 0;
+                
+                if ($taxCategoryId) {
+                    $taxCategory = TaxCategory::find($taxCategoryId);
+                    if ($taxCategory) {
+                        $this->validateTaxCombination($store, $taxCategory);
+                        
+                        // Hitung PPN/PBJT
+                        $amountBeforeTax = ($unitPrice * $quantity) - $discount;
+                        $taxAmount = $amountBeforeTax * ($taxCategory->rate / 100);
+                    } else {
+                        $taxCategoryId = null;
+                    }
+                }
+
+                // Hitung Subtotal
+                $subtotal += ($unitPrice * $quantity);
+                $discountTotal += $discount;
+                $taxTotal += $taxAmount;
+
+                $saleItemId = Str::uuid()->toString();
+
+                $saleItemsData[] = [
+                    'id' => $saleItemId,
+                    'variant_id' => $variantId,
+                    'quantity' => $quantity,
+                    'unit_price' => $unitPrice,
+                    'cost_price' => $variant->cost_price,
+                    'discount' => $discount,
+                    'tax_category_id' => $taxCategoryId,
+                    'tax_amount' => $taxAmount,
+                ];
+
+                // Siapkan InventoryMovement
+                $inventoryMovementsData[] = [
+                    'id' => Str::uuid()->toString(),
+                    'variant_id' => $variantId,
+                    'store_id' => $store->id,
+                    'movement_type' => 'sale',
+                    'quantity_change' => -$quantity, // Negative untuk pengurangan stok
+                    'reference_table' => 'sale_items',
+                    'reference_id' => $saleItemId,
+                    'staff_id' => $staff->id,
+                    'note' => 'Penjualan'
+                ];
             }
 
-            // Hitung Subtotal
-            $subtotal += ($unitPrice * $quantity);
-            $discountTotal += $discount;
-            $taxTotal += $taxAmount;
-
-            $saleItemId = Str::uuid()->toString();
-
-            $saleItemsData[] = [
-                'id' => $saleItemId,
-                'variant_id' => $variantId,
-                'quantity' => $quantity,
-                'unit_price' => $unitPrice,
-                'cost_price' => $variant->cost_price,
-                'discount' => $discount,
-                'tax_category_id' => $taxCategoryId,
-                'tax_amount' => $taxAmount,
-            ];
-
-            // Siapkan InventoryMovement
-            $inventoryMovementsData[] = [
-                'id' => Str::uuid()->toString(),
-                'variant_id' => $variantId,
-                'store_id' => $store->id,
-                'movement_type' => 'sale',
-                'quantity_change' => -$quantity, // Negative untuk pengurangan stok
-                'reference_table' => 'sale_items',
-                'reference_id' => $saleItemId,
-                'staff_id' => $staff->id,
-                'note' => 'Penjualan'
-            ];
-        }
-
-        $grandTotal = $subtotal - $discountTotal + $taxTotal;
-
-        // return DB::transaction(function () use ($data, $staff, $store, $saleItemsData, $inventoryMovementsData, $subtotal, $discountTotal, $taxTotal, $grandTotal) {
+            $grandTotal = $subtotal - $discountTotal + $taxTotal;
             
             $saleId = Str::uuid()->toString();
             $saleNumber = $this->generateSaleNumber($store->id);
@@ -169,7 +187,7 @@ class SaleService
             InventoryMovement::insert($inventoryMovementsData);
 
             return $sale->load(['items.variant.product', 'payments']);
-        // });
+        });
     }
 
     /**

@@ -54,4 +54,17 @@ class Staff extends Authenticatable
 
     public function role() { return $this->belongsTo(Role::class); }
     public function stores() { return $this->belongsToMany(Store::class, 'staff_stores')->withPivot('is_primary'); }
+
+    public function hasPermission(string $permission): bool
+    {
+        if (!$this->role) return false;
+        
+        $permissions = $this->role->permissions ?? [];
+        return in_array($permission, $permissions);
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role && $this->role->name === 'Super Admin';
+    }
 }

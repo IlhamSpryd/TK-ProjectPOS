@@ -1,38 +1,32 @@
 <div class="py-6">
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-            <h1 class="text-h2 font-black text-neutral-900 tracking-tight">Laporan Transaksi</h1>
-            <p class="text-body text-neutral-500 mt-1">Ringkasan penjualan dan riwayat transaksi.</p>
-        </div>
-        <div>
-            <x-ui.select name="dateRange" wire:model.live="dateRange" class="w-40 bg-white">
-                <option value="today">Hari Ini</option>
-                <option value="week">Minggu Ini</option>
-                <option value="month">Bulan Ini</option>
-            </x-ui.select>
-        </div>
-    </div>
+    <x-ui.page-header title="Laporan Transaksi" description="Ringkasan penjualan dan riwayat transaksi.">
+        <x-ui.select name="dateRange" wire:model.live="dateRange" class="w-40 bg-white">
+            <option value="today">Hari Ini</option>
+            <option value="week">Minggu Ini</option>
+            <option value="month">Bulan Ini</option>
+        </x-ui.select>
+    </x-ui.page-header>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <x-ui.card class="p-6 border-neutral-200">
             <h3 class="text-body font-medium text-neutral-500 mb-2">Total Pendapatan</h3>
-            <div class="text-3xl font-black text-neutral-900 tracking-tight">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</div>
+            <div class="text-3xl font-bold text-neutral-800 tracking-tight">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</div>
         </x-ui.card>
         
         <x-ui.card class="p-6 border-neutral-200">
             <h3 class="text-body font-medium text-neutral-500 mb-2">Jumlah Transaksi</h3>
-            <div class="text-3xl font-black text-neutral-900 tracking-tight">{{ number_format($totalTransactions) }}</div>
+            <div class="text-3xl font-bold text-neutral-800 tracking-tight">{{ number_format($totalTransactions) }}</div>
         </x-ui.card>
 
         <x-ui.card class="p-6 border-neutral-200">
             <h3 class="text-body font-medium text-neutral-500 mb-2">Item Terjual</h3>
-            <div class="text-3xl font-black text-neutral-900 tracking-tight">{{ number_format($totalItemsSold) }}</div>
+            <div class="text-3xl font-bold text-neutral-800 tracking-tight">{{ number_format($totalItemsSold) }}</div>
         </x-ui.card>
     </div>
 
     <x-ui.card class="p-0 overflow-hidden border-neutral-200">
         <div class="p-4 border-b border-neutral-200 bg-neutral-50/50 flex justify-between items-center">
-            <h3 class="font-bold text-neutral-900">Riwayat Transaksi</h3>
+            <h3 class="font-semibold text-neutral-800">Riwayat Transaksi</h3>
         </div>
 
         <x-ui.table>
@@ -62,7 +56,7 @@
                         </div>
                     </x-ui.table.td>
                     <x-ui.table.td>
-                        <span class="text-body-sm font-bold text-neutral-900">Rp {{ number_format($sale->grand_total, 0, ',', '.') }}</span>
+                        <span class="text-body-sm font-semibold text-neutral-800">Rp {{ number_format($sale->grand_total, 0, ',', '.') }}</span>
                     </x-ui.table.td>
                     <x-ui.table.td>
                         @if($sale->status === 'completed')

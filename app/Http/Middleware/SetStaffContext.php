@@ -11,8 +11,20 @@ class SetStaffContext
 {
     public function handle(Request $request, Closure $next): Response
     {
-        return DB::transaction(function () use ($next, $request) {
-            return $next($request);
-        });
+        if (auth()->check()) {
+            DB::statement(
+                "SELECT set_config('app.staff_id', ?, false)",
+                [(string) auth()->id()]
+            );
+        }
+
+        $response = $next($request);
+
+        // Reset to prevent leakage if connection is kept alive without pooler discard
+        if (auth()->check()) {
+            DB::statement("SELECT set_config('app.staff_id', '', false)");
+        }
+
+        return $response;
     }
 }

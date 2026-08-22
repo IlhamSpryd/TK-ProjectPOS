@@ -1,6 +1,6 @@
 <form wire:submit="save">
     <div class="mb-6 border-b border-neutral-100 pb-4">
-        <h2 class="text-h2 font-bold text-neutral-900 tracking-tight">{{ $categoryId ? 'Edit Kategori' : 'Tambah Kategori' }}</h2>
+        <h3 class="text-h3 font-semibold text-neutral-800 tracking-tight">{{ $categoryId ? 'Edit Kategori' : 'Tambah Kategori' }}</h3>
         <p class="text-body text-neutral-500 mt-1">Isi detail kategori di bawah ini.</p>
     </div>
 
@@ -23,7 +23,7 @@
                 <input wire:model="active" id="active" name="active" type="checkbox" class="w-4 h-4 rounded-sm border-neutral-300 text-primary-600 focus:ring-primary-500">
             </div>
             <div class="ml-3">
-                <label for="active" class="text-body font-medium text-neutral-900">Kategori Aktif</label>
+                <label for="active" class="text-body font-medium text-neutral-800">Kategori Aktif</label>
                 <p class="text-caption text-neutral-500">Kategori yang tidak aktif tidak akan ditampilkan saat memilih produk.</p>
             </div>
         </div>

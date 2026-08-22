@@ -1,9 +1,5 @@
 <div>
-    <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-            <h1 class="text-title-2 font-semibold text-neutral-900">Manajemen Staff</h1>
-            <p class="text-body text-neutral-500 mt-1">Kelola akun dan akses staf aplikasi Anda.</p>
-        </div>
+    <x-ui.page-header title="Manajemen Staff" description="Kelola data pegawai, kasir, dan hak akses mereka.">
         <div class="flex items-center gap-3">
             <div class="w-64">
                 <x-ui.input 
@@ -11,17 +7,14 @@
                     type="search" 
                     wire:model.live="search" 
                     placeholder="Cari nama atau email..." 
-                    icon="<circle cx='11' cy='11' r='8'></circle><path d='m21 21-4.3-4.3'></path>"
+                    icon="magnifying-glass"
                 />
             </div>
-            <a href="{{ route('staff.create') }}" wire:navigate>
-                <x-ui.button variant="primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 -ml-1"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
-                    Tambah Staff
-                </x-ui.button>
-            </a>
+            <x-ui.button variant="primary" icon="plus" href="{{ route('staff.create') }}" wire:navigate>
+                Tambah Staff
+            </x-ui.button>
         </div>
-    </div>
+    </x-ui.page-header>
 
     <x-ui.card>
         <x-ui.table.index>
@@ -44,7 +37,7 @@
                                     {{ $staff->initials() }}
                                 </div>
                                 <div>
-                                    <p class="font-medium text-neutral-900">{{ $staff->full_name }}</p>
+                                    <span class="text-body font-medium text-neutral-800 block">{{ $staff->full_name }}</span>
                                     <p class="text-body-sm text-neutral-500">ID: {{ substr($staff->id, 0, 8) }}</p>
                                 </div>
                             </div>

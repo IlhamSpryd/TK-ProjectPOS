@@ -1,15 +1,9 @@
 <div class="py-6">
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-            <h1 class="text-h2 font-black text-neutral-900 tracking-tight">Kategori Produk</h1>
-            <p class="text-body text-neutral-500 mt-1">Kelola daftar kategori untuk mengelompokkan produk Anda.</p>
-        </div>
-        <div>
-            <x-ui.button variant="primary" icon="plus" wire:click="$dispatch('editCategory')">
-                Tambah Kategori
-            </x-ui.button>
-        </div>
-    </div>
+    <x-ui.page-header title="Kategori Produk" description="Kelola daftar kategori untuk mengelompokkan produk Anda.">
+        <x-ui.button variant="primary" icon="plus" wire:click="$dispatch('editCategory')">
+            Tambah Kategori
+        </x-ui.button>
+    </x-ui.page-header>
 
     <x-ui.card class="p-0 overflow-hidden border-neutral-200">
         <div class="p-4 border-b border-neutral-200 bg-neutral-50/50">
@@ -32,7 +26,7 @@
                             <div class="w-10 h-10 rounded-lg bg-neutral-100 flex items-center justify-center text-neutral-500 border border-neutral-200">
                                 <flux:icon.tag class="w-5 h-5" />
                             </div>
-                            <span class="text-body font-bold text-neutral-900">{{ $category->name }}</span>
+                            <span class="text-body font-medium text-neutral-800">{{ $category->name }}</span>
                         </div>
                     </x-ui.table.td>
                     <x-ui.table.td>

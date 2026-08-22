@@ -6,10 +6,9 @@
     <title>{{ $title ?? 'POS App' }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
-    @fluxStyles
 </head>
 <body x-data="{ sidebarOpen: window.innerWidth >= 768, ready: false }" x-init="$nextTick(() => ready = true)"
-      class="flex min-h-screen text-neutral-900 antialiased bg-neutral-50 overflow-x-hidden">
+      class="flex min-h-screen text-neutral-900 antialiased bg-white overflow-x-hidden">
 
     <x-layouts.sidebar />
 
@@ -30,7 +29,6 @@
     @if(session('error'))
         <x-ui.toast :message="session('error')" type="error" />
     @endif
-    @fluxScripts
     @livewireScripts
 </body>
 </html>

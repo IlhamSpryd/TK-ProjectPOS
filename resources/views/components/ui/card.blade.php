@@ -4,7 +4,7 @@
     'padding' => 'p-6',
 ])
 
-<div {{ $attributes->merge(['class' => "bg-white border border-neutral-200 rounded-lg shadow-xs flex flex-col"]) }}>
+<div {{ $attributes->merge(['class' => "bg-white border border-neutral-200 rounded-lg flex flex-col"]) }}>
     @if($title || isset($action) || $description)
         <div class="flex justify-between items-start border-b border-neutral-100 pb-4 mb-4 {{ $padding }} pb-0">
             <div>

@@ -28,11 +28,5 @@ class AuthServiceProvider extends ServiceProvider
             return new StaffUserProvider($app['hash'], $config['model']);
         });
 
-        Event::listen(Authenticated::class, function (Authenticated $event) {
-            DB::select(
-                "SELECT set_config('app.staff_id', ?, true)",
-                [(string) $event->user->getAuthIdentifier()]
-            );
-        });
     }
 }

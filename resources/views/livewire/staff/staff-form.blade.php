@@ -1,34 +1,24 @@
 <div>
-    <div class="mb-6 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-            <a href="{{ route('staff.index') }}" wire:navigate class="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-            </a>
-            <div>
-                <h1 class="text-title-2 font-semibold text-neutral-900">Tambah Staff</h1>
-                <p class="text-body text-neutral-500 mt-1">Buat akun baru untuk memberikan akses sistem ke staf.</p>
-            </div>
-        </div>
-        <div>
-            <x-ui.button variant="primary" wire:click="save" wire:loading.attr="disabled" wire:target="save">
-                <span wire:loading.remove wire:target="save">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 -ml-1"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                    Simpan Akun
-                </span>
-                <span wire:loading wire:target="save" class="flex items-center">
-                    <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                    Menyimpan...
-                </span>
-            </x-ui.button>
-        </div>
-    </div>
+    <x-ui.page-header title="Tambah Staff" description="Buat akun baru untuk memberikan akses sistem ke staf.">
+        <x-ui.button variant="ghost" href="{{ route('staff.index') }}" wire:navigate class="px-5">Batal</x-ui.button>
+        <x-ui.button variant="primary" wire:click="save" wire:loading.attr="disabled" wire:target="save">
+            <span wire:loading.remove wire:target="save">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 -ml-1"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                Simpan Akun
+            </span>
+            <span wire:loading wire:target="save" class="flex items-center">
+                <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                Menyimpan...
+            </span>
+        </x-ui.button>
+    </x-ui.page-header>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 space-y-6">
             <x-ui.card>
                 <div class="p-4 border-b border-neutral-100 flex items-center justify-between">
                     <div>
-                        <h2 class="text-body-lg font-semibold text-neutral-900">Informasi Pribadi & Akun</h2>
+                        <h2 class="text-body-lg font-semibold text-neutral-800">Informasi Pribadi & Akun</h2>
                         <p class="text-body-sm text-neutral-500 mt-1">Isi data diri dan kredensial akses untuk staf ini.</p>
                     </div>
                 </div>
@@ -70,7 +60,7 @@
 
             <x-ui.card>
                 <div class="p-4 border-b border-neutral-100">
-                    <h2 class="text-body-lg font-semibold text-neutral-900">Keamanan Akses</h2>
+                    <h2 class="text-body-lg font-semibold text-neutral-800">Keamanan Akses</h2>
                     <p class="text-body-sm text-neutral-500 mt-1">Konfigurasi password untuk masuk ke dasbor dan PIN kasir.</p>
                 </div>
                 
@@ -127,7 +117,7 @@
         <div class="space-y-6">
             <x-ui.card>
                 <div class="p-4 border-b border-neutral-100">
-                    <h2 class="text-body-lg font-semibold text-neutral-900">Status Akun</h2>
+                    <h2 class="text-body-lg font-semibold text-neutral-800">Status Akun</h2>
                 </div>
                 
                 <div class="p-6">
@@ -136,7 +126,7 @@
                             <input type="checkbox" wire:model="active" class="w-4 h-4 text-primary-600 bg-neutral-100 border-neutral-300 rounded focus:ring-primary-500 focus:ring-2">
                         </div>
                         <div class="ml-3 text-body">
-                            <span class="font-medium text-neutral-900 group-hover:text-primary-700 transition-colors">Aktifkan Akun Ini</span>
+                            <span class="font-medium text-neutral-800 group-hover:text-primary-700 transition-colors">Aktifkan Akun Ini</span>
                             <p class="text-neutral-500 text-sm mt-1">Jika dimatikan, staf tidak akan bisa mengakses sistem.</p>
                         </div>
                     </label>

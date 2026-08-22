@@ -29,7 +29,7 @@ class PosScreen extends Component
 
     public function mount()
     {
-        $this->customers = Customer::where('active', true)->get();
+        $this->customers = Customer::where('active', true)->limit(100)->get();
     }
 
     public function updatedSearch()
@@ -80,7 +80,7 @@ class PosScreen extends Component
         if (isset($this->cart[$variantId])) {
             // Validasi jika quantity lbih besar drpd stok
             if ($quantity > $this->cart[$variantId]['stock']) {
-                $this->addError('cart', 'Stok tidak mencukupi');
+                $this->addError('cart', 'Stok tidak mencukupi (Tersedia: ' . $this->cart[$variantId]['stock'] . ')');
                 $quantity = $this->cart[$variantId]['stock'];
             }
             if ($quantity <= 0) {
@@ -105,6 +105,17 @@ class PosScreen extends Component
         if (isset($this->cart[$variantId])) {
             $this->updateQuantity($variantId, $this->cart[$variantId]['quantity'] - 1);
         }
+    }
+
+    public function updateDiscount($variantId, $discount)
+    {
+        if (isset($this->cart[$variantId])) {
+            // Limit discount to not exceed the price * quantity
+            $maxDiscount = $this->cart[$variantId]['price'] * $this->cart[$variantId]['quantity'];
+            $discountAmount = min((float)$discount, $maxDiscount);
+            $this->cart[$variantId]['discount'] = max(0, $discountAmount);
+        }
+        $this->calculateTotals();
     }
 
     public function removeFromCart($variantId)
@@ -206,17 +217,27 @@ class PosScreen extends Component
         $store = $this->getActiveStore($staff);
         if(!$store) return 0;
         
-        // Coba hitung realtime tax
+        // Batch load tax categories to fix N+1
+        $taxCategoryIds = collect($this->cart)
+            ->map(function ($item, $variantId) use ($store) {
+                $variant = ProductVariant::with(['product'])->find($variantId);
+                return $variant->product->tax_category_id ?? $store->default_tax_category_id;
+            })
+            ->filter()
+            ->unique();
+            
+        $taxCategories = \App\Models\TaxCategory::whereIn('id', $taxCategoryIds)
+            ->get()
+            ->keyBy('id');
+            
         foreach($this->cart as $variantId => $item) {
              $variant = ProductVariant::with(['product'])->find($variantId);
              $taxCategoryId = $variant->product->tax_category_id ?? $store->default_tax_category_id;
-             if($taxCategoryId) {
-                 $taxCategory = \App\Models\TaxCategory::find($taxCategoryId);
-                 if($taxCategory) {
-                     // Asumsi sederhana tanpa validasi kombinasi di sini
-                     $amountBeforeTax = ($item['price'] * $item['quantity']) - $item['discount'];
-                     $tax += $amountBeforeTax * ($taxCategory->rate / 100);
-                 }
+             if($taxCategoryId && isset($taxCategories[$taxCategoryId])) {
+                 $taxCategory = $taxCategories[$taxCategoryId];
+                 // Asumsi sederhana tanpa validasi kombinasi di sini
+                 $amountBeforeTax = ($item['price'] * $item['quantity']) - $item['discount'];
+                 $tax += $amountBeforeTax * ($taxCategory->rate / 100);
              }
         }
         return $tax;
@@ -249,11 +270,7 @@ class PosScreen extends Component
         $store = $this->getActiveStore($staff);
         $storeId = $store ? $store->id : null;
 
-        $productsQuery = ProductVariant::with(['product', 'stocks' => function($q) use ($storeId) {
-                if ($storeId) {
-                    $q->where('store_id', $storeId);
-                }
-            }])
+        $productsQuery = ProductVariant::with(['product'])
             ->where('active', true)
             ->whereHas('product', function ($q) {
                 $q->where('active', true)
@@ -270,12 +287,13 @@ class PosScreen extends Component
             });
         }
 
-        $products = $productsQuery->paginate(24);
+        $products = $productsQuery->simplePaginate(24);
         $categories = \App\Models\Category::where('active', true)->get();
 
         return view('livewire.pos-screen', [
             'products' => $products,
             'categories' => $categories,
+            'storeId' => $storeId,
         ])->layout('layouts.app');
     }
 }

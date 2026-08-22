@@ -16,24 +16,24 @@
     $baseClasses = "inline-flex items-center justify-center font-medium transition-colors duration-150 rounded-lg focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary-300 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
     
     $sizeClasses = match($size) {
-        'sm' => 'h-8 px-3 text-sm',
-        'md' => 'h-10 px-4 text-button',
-        'lg' => 'h-11 px-6 text-button',
-        default => 'h-10 px-4 text-button',
+        'sm' => 'h-8 px-2.5 text-xs',
+        'md' => 'h-9 px-3.5 text-sm',
+        'lg' => 'h-10 px-5 text-sm',
+        default => 'h-9 px-3.5 text-sm',
     };
 
     if ($variant === 'icon') {
-        $sizeClasses = 'w-10 h-10 p-0 flex items-center justify-center';
+        $sizeClasses = 'w-9 h-9 p-0 flex items-center justify-center';
     }
 
     $variantClasses = match($variant) {
-        'primary' => 'bg-primary-500 text-white hover:bg-primary-600 active:bg-primary-700 disabled:bg-neutral-200 disabled:text-neutral-400 disabled:border-transparent border border-transparent',
-        'secondary' => 'bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-50 active:bg-neutral-100',
-        'ghost' => 'text-primary-600 hover:bg-primary-50 active:bg-primary-100 border border-transparent',
-        'danger' => 'bg-danger-500 text-white hover:bg-danger-600 active:bg-danger-700 border border-transparent',
-        'danger-ghost' => 'text-danger-500 border border-transparent hover:border-danger-200 hover:bg-danger-50',
-        'icon' => 'text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 border border-transparent',
-        default => 'bg-primary-500 text-white hover:bg-primary-600 border border-transparent',
+        'primary' => 'bg-primary-600 text-white hover:bg-primary-700 active:bg-black disabled:bg-neutral-100 disabled:text-neutral-400 disabled:border-neutral-200 border border-transparent shadow-sm',
+        'secondary' => 'bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-50 active:bg-neutral-100 shadow-sm',
+        'ghost' => 'text-neutral-600 hover:bg-neutral-100 active:bg-neutral-200 border border-transparent',
+        'danger' => 'bg-danger-600 text-white hover:bg-danger-700 active:bg-danger-800 border border-transparent shadow-sm',
+        'danger-ghost' => 'text-danger-600 border border-transparent hover:border-danger-200 hover:bg-danger-50',
+        'icon' => 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 border border-transparent',
+        default => 'bg-primary-600 text-white hover:bg-primary-700 border border-transparent shadow-sm',
     };
 @endphp
 

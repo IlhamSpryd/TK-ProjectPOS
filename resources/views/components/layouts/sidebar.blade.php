@@ -88,15 +88,15 @@
                     @php
                         $itemPath = parse_url($item['url'], PHP_URL_PATH) ?? '/';
                     @endphp
-                    <a @if($item['url'] != '#') @click="currentPath = '{{ $itemPath }}'" href="{{ $item['url'] }}" wire:navigate @else href="#" @endif
+                    <a @if($item['url'] != '#') @click="currentPath = '{{ $itemPath }}'" href="{{ $item['url'] }}" wire:navigate.hover @else href="#" @endif
                        :aria-current="currentPath === '{{ $itemPath }}' ? 'page' : null"
-                       class="flex items-center h-10 group relative z-10 w-full rounded-lg focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:outline-none transition-colors overflow-visible px-2.5"
+                       class="flex items-center h-9 group relative z-10 w-full rounded-lg focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:outline-none transition-colors overflow-visible px-2"
                        :class="currentPath === '{{ $itemPath }}' ? 'bg-neutral-100 text-neutral-900 font-medium' : 'text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900'">
                         <svg class="w-[18px] h-[18px] shrink-0 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             {!! $item['icon'] !!}
                         </svg>
                         <span :class="sidebarOpen ? 'opacity-100 w-auto ml-3' : 'opacity-0 w-0 ml-0'"
-                              class="text-[14px] transition-all overflow-hidden whitespace-nowrap">{{ $item['label'] }}</span>
+                              class="text-[13px] transition-all overflow-hidden whitespace-nowrap">{{ $item['label'] }}</span>
 
                         <div x-show="!sidebarOpen" aria-hidden="true"
                              class="invisible opacity-0 md:group-hover:visible md:group-hover:opacity-100 md:group-focus-visible:visible md:group-focus-visible:opacity-100 absolute left-full ml-2 translate-x-0 bg-neutral-900 text-white text-[12px] font-medium px-2 py-1 rounded whitespace-nowrap z-50 shadow-sm transition-opacity">
@@ -106,25 +106,25 @@
                 @endif
             @endforeach
 
-            <div :class="sidebarOpen ? 'opacity-100 mt-6 mb-2 px-3' : 'opacity-0 h-0 overflow-hidden'" class="transition-all duration-300">
+            <div :class="sidebarOpen ? 'opacity-100 mt-4 mb-1 px-3' : 'opacity-0 h-0 overflow-hidden'" class="transition-all duration-300">
                 <div class="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Manajemen</div>
             </div>
-            <div x-show="!sidebarOpen" class="mt-4 mb-2 h-px bg-neutral-200 mx-3"></div>
+            <div x-show="!sidebarOpen" class="mt-4 mb-1 h-px bg-neutral-200 mx-3"></div>
 
             @foreach($managementItems as $item)
                 @if(!isset($item['visible']) || $item['visible'])
                     @php
                         $itemPath = parse_url($item['url'], PHP_URL_PATH) ?? '/';
                     @endphp
-                    <a @if($item['url'] != '#') @click="currentPath = '{{ $itemPath }}'" href="{{ $item['url'] }}" wire:navigate @else href="#" @endif
+                    <a @if($item['url'] != '#') @click="currentPath = '{{ $itemPath }}'" href="{{ $item['url'] }}" wire:navigate.hover @else href="#" @endif
                        :aria-current="currentPath === '{{ $itemPath }}' ? 'page' : null"
-                       class="flex items-center h-10 group relative z-10 w-full rounded-lg focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:outline-none transition-colors overflow-visible px-2.5"
+                       class="flex items-center h-9 group relative z-10 w-full rounded-lg focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:outline-none transition-colors overflow-visible px-2"
                        :class="currentPath === '{{ $itemPath }}' ? 'bg-neutral-100 text-neutral-900 font-medium' : 'text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900'">
                         <svg class="w-[18px] h-[18px] shrink-0 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             {!! $item['icon'] !!}
                         </svg>
                         <span :class="sidebarOpen ? 'opacity-100 w-auto ml-3' : 'opacity-0 w-0 ml-0'"
-                              class="text-[14px] transition-all overflow-hidden whitespace-nowrap">{{ $item['label'] }}</span>
+                              class="text-[13px] transition-all overflow-hidden whitespace-nowrap">{{ $item['label'] }}</span>
 
                         <div x-show="!sidebarOpen" aria-hidden="true"
                              class="invisible opacity-0 md:group-hover:visible md:group-hover:opacity-100 md:group-focus-visible:visible md:group-focus-visible:opacity-100 absolute left-full ml-2 translate-x-0 bg-neutral-900 text-white text-[12px] font-medium px-2 py-1 rounded whitespace-nowrap z-50 shadow-sm transition-opacity">
@@ -134,25 +134,25 @@
                 @endif
             @endforeach
 
-            <div :class="sidebarOpen ? 'opacity-100 mt-6 mb-2 px-3' : 'opacity-0 h-0 overflow-hidden'" class="transition-all duration-300">
+            <div :class="sidebarOpen ? 'opacity-100 mt-4 mb-1 px-3' : 'opacity-0 h-0 overflow-hidden'" class="transition-all duration-300">
                 <div class="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Akun</div>
             </div>
-            <div x-show="!sidebarOpen" class="mt-4 mb-2 h-px bg-neutral-200 mx-3"></div>
+            <div x-show="!sidebarOpen" class="mt-4 mb-1 h-px bg-neutral-200 mx-3"></div>
 
             @foreach($accountItems as $item)
                 @if(!isset($item['visible']) || $item['visible'])
                     @php
                         $itemPath = parse_url($item['url'], PHP_URL_PATH) ?? '/';
                     @endphp
-                    <a @if($item['url'] != '#') @click="currentPath = '{{ $itemPath }}'" href="{{ $item['url'] }}" wire:navigate @else href="#" @endif
+                    <a @if($item['url'] != '#') @click="currentPath = '{{ $itemPath }}'" href="{{ $item['url'] }}" wire:navigate.hover @else href="#" @endif
                        :aria-current="currentPath === '{{ $itemPath }}' ? 'page' : null"
-                       class="flex items-center h-10 group relative z-10 w-full rounded-lg focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:outline-none transition-colors overflow-visible px-2.5"
+                       class="flex items-center h-9 group relative z-10 w-full rounded-lg focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:outline-none transition-colors overflow-visible px-2"
                        :class="currentPath === '{{ $itemPath }}' ? 'bg-neutral-100 text-neutral-900 font-medium' : 'text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900'">
                         <svg class="w-[18px] h-[18px] shrink-0 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             {!! $item['icon'] !!}
                         </svg>
                         <span :class="sidebarOpen ? 'opacity-100 w-auto ml-3' : 'opacity-0 w-0 ml-0'"
-                              class="text-[14px] transition-all overflow-hidden whitespace-nowrap">{{ $item['label'] }}</span>
+                              class="text-[13px] transition-all overflow-hidden whitespace-nowrap">{{ $item['label'] }}</span>
 
                         <div x-show="!sidebarOpen" aria-hidden="true"
                              class="invisible opacity-0 md:group-hover:visible md:group-hover:opacity-100 md:group-focus-visible:visible md:group-focus-visible:opacity-100 absolute left-full ml-2 translate-x-0 bg-neutral-900 text-white text-[12px] font-medium px-2 py-1 rounded whitespace-nowrap z-50 shadow-sm transition-opacity">
@@ -194,7 +194,7 @@
              </div>
 
              <div class="py-1">
-                 <a href="{{ route('profile.edit') }}" role="menuitem" class="flex items-center gap-2.5 px-3 py-2 text-[13px] text-neutral-700 hover:bg-neutral-50 transition-colors" wire:navigate>
+                 <a href="{{ route('profile.edit') }}" role="menuitem" class="flex items-center gap-2.5 px-3 py-2 text-[13px] text-neutral-700 hover:bg-neutral-50 transition-colors" wire:navigate.hover>
                      <svg class="w-[16px] h-[16px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>
                      </svg>

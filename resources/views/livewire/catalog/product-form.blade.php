@@ -1,16 +1,10 @@
 <div class="py-6">
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-            <h1 class="text-h2 font-black text-neutral-900 tracking-tight">{{ $productId ? 'Edit Produk' : 'Tambah Produk Baru' }}</h1>
-            <p class="text-body text-neutral-500 mt-1">Masukkan informasi produk dan kelola variannya.</p>
-        </div>
-        <div class="flex items-center gap-3">
-            <x-ui.button variant="ghost" href="{{ route('catalog.products') }}" wire:navigate class="px-5">Batal</x-ui.button>
-            <x-ui.button variant="primary" wire:click="save" class="px-6 shadow-md">
-                Simpan Produk
-            </x-ui.button>
-        </div>
-    </div>
+    <x-ui.page-header title="{{ $productId ? 'Edit Produk' : 'Tambah Produk Baru' }}" description="Masukkan informasi produk dan kelola variannya.">
+        <x-ui.button variant="ghost" href="{{ route('catalog.products') }}" wire:navigate class="px-5">Batal</x-ui.button>
+        <x-ui.button variant="primary" wire:click="save" class="px-6 shadow-xs">
+            Simpan Produk
+        </x-ui.button>
+    </x-ui.page-header>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="col-span-2 space-y-6">
@@ -21,7 +15,7 @@
                     <div class="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center text-primary-600">
                         <flux:icon.information-circle class="w-5 h-5" />
                     </div>
-                    <h2 class="text-h3 font-bold text-neutral-900">Informasi Umum</h2>
+                    <h2 class="text-h3 font-semibold text-neutral-800">Informasi Umum</h2>
                 </div>
                 
                 <div class="space-y-5">
@@ -61,7 +55,7 @@
                         <div class="w-10 h-10 rounded-xl bg-success-50 flex items-center justify-center text-success-600">
                             <flux:icon.currency-dollar class="w-5 h-5" />
                         </div>
-                        <h2 class="text-h3 font-bold text-neutral-900">Varian & Harga</h2>
+                        <h2 class="text-h3 font-semibold text-neutral-800">Varian & Harga</h2>
                     </div>
                     <x-ui.button size="sm" variant="ghost" icon="plus" wire:click="addVariant" class="text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-xl">
                         Tambah Varian
@@ -75,8 +69,8 @@
                             
                             <div class="flex justify-between items-center mb-4">
                                 <div class="flex items-center gap-2">
-                                    <span class="flex items-center justify-center w-6 h-6 rounded-md bg-white text-xs font-bold text-neutral-500 border border-neutral-200 shadow-xs">{{ $index + 1 }}</span>
-                                    <span class="font-bold text-body-sm text-neutral-900">Detail Varian</span>
+                                    <span class="flex items-center justify-center w-6 h-6 rounded-md bg-white text-xs font-semibold text-neutral-500 border border-neutral-200 shadow-xs">{{ $index + 1 }}</span>
+                                    <span class="font-semibold text-body-sm text-neutral-800">Detail Varian</span>
                                 </div>
                                 @if(collect($variants)->where('is_deleted', false)->count() > 1)
                                     <x-ui.button size="sm" variant="ghost" icon="trash" class="text-neutral-400 hover:text-danger-600 hover:bg-danger-50 transition-colors" wire:click="removeVariant({{ $index }})" />
@@ -108,7 +102,7 @@
                                     <input wire:model="variants.{{ $index }}.active" id="variants.{{ $index }}.active" type="checkbox" class="w-4 h-4 rounded-sm border-neutral-300 text-primary-600 focus:ring-primary-500">
                                 </div>
                                 <div class="ml-3">
-                                    <label for="variants.{{ $index }}.active" class="text-body font-medium text-neutral-900">Varian Aktif</label>
+                                    <label for="variants.{{ $index }}.active" class="text-body font-medium text-neutral-800">Varian Aktif</label>
                                 </div>
                             </div>
                         </div>
@@ -126,7 +120,7 @@
                     <div class="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
                         <flux:icon.cog-6-tooth class="w-5 h-5" />
                     </div>
-                    <h2 class="text-h3 font-bold text-neutral-900">Pengaturan Lanjutan</h2>
+                    <h2 class="text-h3 font-semibold text-neutral-800">Pengaturan Lanjutan</h2>
                 </div>
                 
                 <div class="space-y-5">
@@ -138,7 +132,7 @@
                                 <input wire:model="track_stock" id="track_stock" type="checkbox" class="w-4 h-4 rounded-sm border-neutral-300 text-primary-600 focus:ring-primary-500">
                             </div>
                             <div class="ml-3">
-                                <label for="track_stock" class="text-body font-medium text-neutral-900">Lacak Stok</label>
+                                <label for="track_stock" class="text-body font-medium text-neutral-800">Lacak Stok</label>
                                 <p class="text-caption text-neutral-500">Pilih jika Anda ingin sistem mencatat pergerakan stok barang ini.</p>
                             </div>
                         </div>
@@ -148,7 +142,7 @@
                                 <input wire:model="is_service" id="is_service" type="checkbox" class="w-4 h-4 rounded-sm border-neutral-300 text-primary-600 focus:ring-primary-500">
                             </div>
                             <div class="ml-3">
-                                <label for="is_service" class="text-body font-medium text-neutral-900">Barang Jasa</label>
+                                <label for="is_service" class="text-body font-medium text-neutral-800">Barang Jasa</label>
                                 <p class="text-caption text-neutral-500">Pilih jika ini adalah layanan/jasa yang tidak berbentuk fisik.</p>
                             </div>
                         </div>
@@ -158,7 +152,7 @@
                                 <input wire:model="active" id="active" type="checkbox" class="w-4 h-4 rounded-sm border-neutral-300 text-primary-600 focus:ring-primary-500">
                             </div>
                             <div class="ml-3">
-                                <label for="active" class="text-body font-medium text-neutral-900">Produk Aktif</label>
+                                <label for="active" class="text-body font-medium text-neutral-800">Produk Aktif</label>
                                 <p class="text-caption text-neutral-500">Produk tidak akan muncul di sistem POS jika dimatikan.</p>
                             </div>
                         </div>
