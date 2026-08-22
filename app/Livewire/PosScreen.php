@@ -214,35 +214,39 @@ class PosScreen extends Component
         $store = $staff->getActiveStore();
         if(!$store) return 0;
         
-        // Batch load tax categories to fix N+1
-        $taxCategoryIds = collect($this->cart)
-            ->map(function ($item, $variantId) use ($store) {
-                // Gunakan static query atau pastikan variant di-cache jika memungkinkan. 
-                // Di sini kita fetch ulang ringan, atau idealnya variant data sudah ada di cart.
-                $variant = ProductVariant::with(['product'])->find($variantId);
-                return $variant->product->tax_category_id ?? $store->default_tax_category_id;
-            })
-            ->filter()
-            ->unique();
+        if (empty($this->cart)) return 0;
+
+        // 1. Fetch semua varian di cart sekaligus (1 query)
+        $variants = ProductVariant::with(['product'])->whereIn('id', array_keys($this->cart))->get()->keyBy('id');
+        
+        // 2. Kumpulkan semua tax_category_id yang dibutuhkan
+        $taxCategoryIds = [];
+        foreach($this->cart as $variantId => $item) {
+            $variant = $variants->get($variantId);
+            if ($variant) {
+                $taxCategoryIds[] = $variant->product->tax_category_id ?? $store->default_tax_category_id;
+            }
+        }
+        $taxCategoryIds = array_filter(array_unique($taxCategoryIds));
             
+        // 3. Fetch tax categories (1 query)
         $taxCategories = \App\Models\TaxCategory::whereIn('id', $taxCategoryIds)
             ->get()
             ->keyBy('id');
-            
-        // Gunakan eager loading untuk semua varian di cart sekaligus
-        $variants = ProductVariant::with(['product'])->whereIn('id', array_keys($this->cart))->get()->keyBy('id');
 
+        // 4. Hitung pajak
         foreach($this->cart as $variantId => $item) {
              $variant = $variants->get($variantId);
              if (!$variant) continue;
+             
              $taxCategoryId = $variant->product->tax_category_id ?? $store->default_tax_category_id;
              if($taxCategoryId && isset($taxCategories[$taxCategoryId])) {
                  $taxCategory = $taxCategories[$taxCategoryId];
-                 // Asumsi sederhana tanpa validasi kombinasi di sini
                  $amountBeforeTax = ($item['price'] * $item['quantity']) - $item['discount'];
                  $tax += $amountBeforeTax * ($taxCategory->rate / 100);
              }
         }
+        
         return $tax;
     }
 
