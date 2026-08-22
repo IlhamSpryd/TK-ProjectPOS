@@ -283,7 +283,7 @@ class Security extends Component
     public function render()
     {
         return view('livewire.settings.security')->layout('components.layouts.app', [
-            'title' => 'Pengaturan Keamanan',
+            'title' => 'Pengaturan',
             'breadcrumbs' => [
                 ['label' => 'Dashboard', 'route' => route('dashboard')],
                 ['label' => 'Pengaturan']

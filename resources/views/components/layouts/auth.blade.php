@@ -5,6 +5,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title ?? 'Login - POS App' }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
@@ -19,7 +23,7 @@
         <p class="text-body text-neutral-500 mt-1.5">{{ $subtitle ?? 'Masuk ke akun Anda' }}</p>
     </div>
 
-    <x-ui.card class="w-full max-w-md p-8 border-neutral-200 shadow-md">
+    <x-ui.card class="w-full max-w-md p-8 border-neutral-200 shadow-sm">
         {{ $slot }}
     </x-ui.card>
 

@@ -5,6 +5,12 @@
     <!-- Header -->
     <header class="flex items-center justify-between px-5 py-3 border-b border-neutral-200 bg-white shrink-0 h-[60px]">
         <div class="flex items-center gap-3">
+            <!-- Hamburger Button -->
+            <button @click="sidebarOpen = true" aria-controls="main-sidebar" aria-label="Toggle sidebar"
+                class="hidden md:flex p-1.5 -ml-2 rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:outline-none transition-colors items-center justify-center shrink-0 w-8 h-8">
+                <flux:icon name="bars-3" variant="outline" class="w-5 h-5 shrink-0 stroke-2" />
+            </button>
+
             <h1 class="text-[15px] font-semibold text-neutral-800">Buat Pesanan</h1>
             <div class="h-4 w-px bg-neutral-300"></div>
             <span class="text-[12px] font-medium text-neutral-600 flex items-center gap-1.5">

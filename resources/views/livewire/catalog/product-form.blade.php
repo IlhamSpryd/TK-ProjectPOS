@@ -144,7 +144,7 @@
                                :class="isDropping ? 'border-primary-500 bg-primary-50' : 'border-neutral-300 bg-neutral-50 hover:bg-neutral-100 hover:border-primary-400'"
                                x-on:drop="document.getElementById('product_image').files = $event.dataTransfer.files; document.getElementById('product_image').dispatchEvent(new Event('change', { bubbles: true }));">
                             <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                <flux:icon.photo class="w-10 h-10 mb-3" :class="isDropping ? 'text-primary-500' : 'text-neutral-400'" />
+                                <flux:icon.photo class="w-10 h-10 mb-3" x-bind:class="isDropping ? 'text-primary-500' : 'text-neutral-400'" />
                                 <p class="mb-1 text-sm text-neutral-600"><span class="font-semibold text-primary-600">Klik untuk memilih</span> atau seret & lepas gambar</p>
                                 <p class="text-xs text-neutral-500">PNG, JPG, JPEG (Maks. 2MB)</p>
                             </div>

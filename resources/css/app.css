@@ -50,18 +50,7 @@
     --color-info-500: #1A73E8;
     --color-info-700: #185ABC;
 
-    /*
-   * Aksen signature — satu-satunya warna non-monokrom yang dipakai sengaja
-   * di seluruh layout, khusus sebagai penanda "kamu sedang di sini" pada
-   * navigasi (bukan untuk tombol/CTA, itu tetap monokrom di --color-primary).
-   * Warnanya diambil dari biru khas Notion (#337EA9) agar konsisten dengan
-   * arah desain yang diminta, bukan biru saturasi tinggi seperti Google Blue.
-   */
-    --color-accent-blue-50: #EBF3F7;
-    --color-accent-blue-100: #D3E5EE;
-    --color-accent-blue-500: #337EA9;
-    --color-accent-blue-600: #2B6A8E;
-    --color-accent-blue-700: #235573;
+
 
     --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
@@ -123,9 +112,7 @@
         --color-accent-content: var(--color-primary-300);
         --color-accent-foreground: var(--color-neutral-900);
 
-        /* Sedikit dicerahkan supaya tetap terbaca di atas latar gelap */
-        --color-accent-blue-500: #5B9BC4;
-        --color-accent-blue-600: #337EA9;
+
     }
 }
 
@@ -142,4 +129,13 @@
     [x-cloak] {
         display: none !important;
     }
+}
+
+/* Custom Livewire Progress Bar */
+#nprogress .bar {
+    background: var(--color-neutral-900) !important;
+}
+#nprogress .spinner-icon {
+    border-top-color: var(--color-neutral-900) !important;
+    border-left-color: var(--color-neutral-900) !important;
 }

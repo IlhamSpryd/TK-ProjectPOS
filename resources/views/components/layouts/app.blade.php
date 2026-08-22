@@ -15,16 +15,17 @@
     @fluxAppearance
 </head>
 
-<body x-data="{ sidebarOpen: window.innerWidth >= 768, ready: false }" x-init="$nextTick(() => ready = true)"
+<body x-data="{ sidebarOpen: false, ready: false }" x-init="$nextTick(() => ready = true)"
     class="flex min-h-screen text-neutral-900 antialiased bg-neutral-50 overflow-x-hidden">
+
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-white focus:text-neutral-900 font-medium rounded-br-lg shadow-sm">Lewati ke konten utama</a>
 
     <x-layouts.sidebar />
 
     <x-layouts.topbar-mobile :title="$title" />
 
     <main id="main-content"
-        :class="[sidebarOpen ? 'md:ml-64' : 'md:ml-[72px]', ready ? 'transition-all duration-300 ease-out' : '']"
-        class="flex-1 flex flex-col min-h-screen pt-16 md:pt-0 relative min-w-0">
+        class="flex-1 flex flex-col min-h-screen {{ request()->routeIs('pos') ? 'pt-0' : 'pt-16 md:pt-0' }} relative min-w-0">
 
         {{-- Header halaman desktop: dilewati untuk POS (layar kasir full-bleed)
              dan hanya muncul kalau view memang mengirim title/breadcrumbs,

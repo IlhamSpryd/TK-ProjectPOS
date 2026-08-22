@@ -1,7 +1,5 @@
 <section class="w-full">
-    @include('partials.settings-heading')
-
-    <x-settings.layout :heading="__('Perbarui Sandi')" :subheading="__('Pastikan akun Anda menggunakan kata sandi yang panjang dan acak agar tetap aman.')">
+    <x-settings.layout :heading="__('Keamanan')" :subheading="__('Kelola password dan pengaturan keamanan.')">
         <form method="POST" wire:submit="updatePassword" class="space-y-6">
             <div>
                 <x-ui.input

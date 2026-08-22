@@ -90,7 +90,7 @@ class Profile extends Component
     public function render()
     {
         return view('livewire.settings.profile')->layout('components.layouts.app', [
-            'title' => 'Pengaturan Profil',
+            'title' => 'Pengaturan',
             'breadcrumbs' => [
                 ['label' => 'Dashboard', 'route' => route('dashboard')],
                 ['label' => 'Pengaturan']

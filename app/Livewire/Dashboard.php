@@ -70,7 +70,7 @@ class Dashboard extends Component
             'chartLabels' => $chartLabels,
             'chartData' => $chartData
         ])->layout('components.layouts.app', [
-            'title' => 'Dashboard',
+            'title' => 'Selamat Datang, ' . (auth()->user()->full_name ?? auth()->user()->name) . ' 👋',
             'breadcrumbs' => [
                 ['label' => 'Dashboard']
             ],

@@ -1,12 +1,4 @@
 <div class="flex h-full w-full flex-1 flex-col gap-6">
-        <!-- Header -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h1 class="text-h2 font-bold text-neutral-900">Selamat Datang, {{ auth()->user()->full_name ?? auth()->user()->name }}! 👋</h1>
-                <p class="text-body text-neutral-500 mt-1">Berikut adalah ringkasan penjualan {{ $store ? $store->name : 'toko Anda' }} hari ini.</p>
-            </div>
-        </div>
-
         <!-- Metrics -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <!-- Revenue -->
