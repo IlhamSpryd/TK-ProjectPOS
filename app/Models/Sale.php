@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Sale extends Model
 {
     use HasFactory;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'sales';
 
@@ -16,6 +17,7 @@ class Sale extends Model
     public $incrementing = false;
 
     protected $fillable = [
+        'tenant_id',
         'store_id',
         'customer_id',
         'staff_id',

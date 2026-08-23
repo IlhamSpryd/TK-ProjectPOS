@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Payment extends Model
 {
     use HasFactory;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'payments';
 
@@ -18,6 +19,7 @@ class Payment extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'tenant_id',
         'sale_id',
         'payment_method',
         'amount',

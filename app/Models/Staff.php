@@ -10,6 +10,7 @@ use Illuminate\Notifications\Notifiable;
 class Staff extends Authenticatable
 {
     use HasFactory, Notifiable, SoftDeletes;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'staff';
 
@@ -18,6 +19,7 @@ class Staff extends Authenticatable
     public $incrementing = false;
 
     protected $fillable = [
+        'tenant_id',
         'role_id',
         'full_name',
         'email',

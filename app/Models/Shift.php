@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Shift extends Model
 {
     use HasFactory;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'shifts';
 
@@ -18,6 +19,7 @@ class Shift extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'tenant_id',
         'register_id',
         'staff_id',
         'opened_at',

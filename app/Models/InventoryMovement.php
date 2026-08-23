@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class InventoryMovement extends Model
 {
     use HasFactory;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'inventory_movements';
 
@@ -18,6 +19,7 @@ class InventoryMovement extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'tenant_id',
         'variant_id',
         'store_id',
         'movement_type',

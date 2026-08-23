@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class InventoryStock extends Model
 {
     use HasFactory;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'inventory_stock';
 
@@ -16,6 +17,7 @@ class InventoryStock extends Model
     public $incrementing = false;
 
     protected $fillable = [
+        'tenant_id',
         'variant_id',
         'store_id',
         'quantity',

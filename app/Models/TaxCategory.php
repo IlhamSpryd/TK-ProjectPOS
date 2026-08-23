@@ -9,6 +9,7 @@ use Illuminate\Support\Collection;
 class TaxCategory extends Model
 {
     use HasFactory;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'tax_categories';
 
@@ -19,6 +20,7 @@ class TaxCategory extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'tenant_id',
         'name',
         'tax_type',
         'rate',

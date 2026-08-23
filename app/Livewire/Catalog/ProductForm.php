@@ -40,6 +40,9 @@ class ProductForm extends Component
 
     public ?string $existingImage = null;
 
+    // Additional Product specs
+    public array $attributes = [];
+
     // Variants array
     public array $variants = [];
 
@@ -58,6 +61,7 @@ class ProductForm extends Component
             $this->is_service = $product->is_service;
             $this->active = $product->active;
             $this->existingImage = $product->image_url;
+            $this->attributes = $product->attributes ?? [];
 
             foreach ($product->variants as $variant) {
                 $this->variants[] = [
@@ -66,6 +70,7 @@ class ProductForm extends Component
                     'barcode' => $variant->barcode ?? '',
                     'cost_price' => $variant->cost_price ?? 0,
                     'selling_price' => $variant->selling_price ?? 0,
+                    'attributes' => $variant->attributes ?? [],
                     'active' => $variant->active,
                     'is_deleted' => false,
                 ];
@@ -84,6 +89,7 @@ class ProductForm extends Component
             'barcode' => '',
             'cost_price' => 0,
             'selling_price' => 0,
+            'attributes' => [],
             'active' => true,
             'is_deleted' => false,
         ];
@@ -141,6 +147,7 @@ class ProductForm extends Component
                         'track_stock' => $this->track_stock,
                         'is_service' => $this->is_service,
                         'active' => $this->active,
+                        'attributes' => $this->attributes,
                     ];
 
                     if ($imagePath) {
@@ -159,6 +166,7 @@ class ProductForm extends Component
                         'track_stock' => $this->track_stock,
                         'is_service' => $this->is_service,
                         'active' => $this->active,
+                        'attributes' => $this->attributes,
                         'image_url' => $imagePath,
                     ]);
 
@@ -181,6 +189,7 @@ class ProductForm extends Component
                             'barcode' => $variantData['barcode'] ?: null,
                             'cost_price' => $variantData['cost_price'] ?: 0,
                             'selling_price' => $variantData['selling_price'] ?: 0,
+                            'attributes' => $variantData['attributes'] ?? [],
                             'active' => $variantData['active'],
                         ]);
                     } else {
@@ -191,7 +200,7 @@ class ProductForm extends Component
                             'barcode' => $variantData['barcode'] ?: null,
                             'cost_price' => $variantData['cost_price'] ?: 0,
                             'selling_price' => $variantData['selling_price'] ?: 0,
-                            'attributes' => [],
+                            'attributes' => $variantData['attributes'] ?? [],
                             'active' => $variantData['active'],
                         ]);
                     }

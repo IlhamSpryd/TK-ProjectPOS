@@ -10,6 +10,7 @@ class ProductVariant extends Model
 {
     use HasFactory;
     use SoftDeletes;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'product_variants';
 
@@ -18,6 +19,7 @@ class ProductVariant extends Model
     public $incrementing = false;
 
     protected $fillable = [
+        'tenant_id',
         'product_id',
         'sku',
         'barcode',

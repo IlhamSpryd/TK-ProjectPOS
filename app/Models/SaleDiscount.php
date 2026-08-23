@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class SaleDiscount extends Model
 {
+    use \App\Traits\BelongsToTenant;
+
     protected $table = 'sale_discounts';
 
     protected $keyType = 'string';
@@ -15,6 +17,7 @@ class SaleDiscount extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'tenant_id',
         'sale_id',
         'discount_id',
         'label',

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class PurchaseOrderItem extends Model
 {
     use HasFactory;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'purchase_order_items';
 
@@ -18,6 +19,7 @@ class PurchaseOrderItem extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'tenant_id',
         'purchase_order_id',
         'variant_id',
         'quantity',

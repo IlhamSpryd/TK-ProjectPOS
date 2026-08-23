@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Register extends Model
 {
     use HasFactory;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'registers';
 
@@ -18,6 +19,7 @@ class Register extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'tenant_id',
         'store_id',
         'name',
         'status',

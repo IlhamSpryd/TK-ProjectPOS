@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Customer extends Model
 {
     use HasFactory, SoftDeletes;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'customers';
 
@@ -17,6 +18,7 @@ class Customer extends Model
     public $incrementing = false;
 
     protected $fillable = [
+        'tenant_id',
         'name',
         'email',
         'phone',

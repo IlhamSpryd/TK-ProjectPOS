@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Discount extends Model
 {
     use HasFactory;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'discounts';
 
@@ -18,6 +19,7 @@ class Discount extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'tenant_id',
         'store_id',
         'name',
         'type',

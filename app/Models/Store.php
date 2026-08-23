@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Store extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, \App\Traits\BelongsToTenant;
 
     protected $table = 'stores';
 
@@ -17,6 +17,7 @@ class Store extends Model
     public $incrementing = false;
 
     protected $fillable = [
+        'tenant_id',
         'name',
         'business_type',
         'is_pkp',
@@ -34,6 +35,7 @@ class Store extends Model
 
     protected $casts = [
         'id' => 'string',
+        'settings' => 'array',
         'is_pkp' => 'boolean',
         'active' => 'boolean',
     ];

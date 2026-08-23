@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Role extends Model
 {
     use HasFactory;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'roles';
 
@@ -18,6 +19,7 @@ class Role extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'tenant_id',
         'name',
         'permissions',
     ];

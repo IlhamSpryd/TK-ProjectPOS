@@ -9,6 +9,7 @@ use Illuminate\Support\Collection;
 class Category extends Model
 {
     use HasFactory;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'categories';
 
@@ -17,6 +18,7 @@ class Category extends Model
     public $incrementing = false;
 
     protected $fillable = [
+        'tenant_id',
         'parent_id',
         'name',
         'active',

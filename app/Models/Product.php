@@ -10,6 +10,7 @@ class Product extends Model
 {
     use HasFactory;
     use SoftDeletes;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'products';
 
@@ -18,6 +19,7 @@ class Product extends Model
     public $incrementing = false;
 
     protected $fillable = [
+        'tenant_id',
         'category_id',
         'supplier_id',
         'tax_category_id',
@@ -33,6 +35,7 @@ class Product extends Model
 
     protected $casts = [
         'id' => 'string',
+        'attributes' => 'array',
         'track_stock' => 'boolean',
         'is_service' => 'boolean',
         'active' => 'boolean',

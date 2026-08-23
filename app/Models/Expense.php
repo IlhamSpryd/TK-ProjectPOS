@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Expense extends Model
 {
     use HasFactory;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'expenses';
 
@@ -18,6 +19,7 @@ class Expense extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'tenant_id',
         'store_id',
         'staff_id',
         'category',

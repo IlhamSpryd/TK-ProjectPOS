@@ -20,10 +20,9 @@ class SetStaffContext
         if (auth()->check() && DB::connection()->getDriverName() === 'pgsql') {
             // Note: The primary fix for connection pooling session leakage is handled
             // by using Supabase Session Pooler (port 5432) instead of Transaction Pooler (6543).
-            DB::statement(
-                "SELECT set_config('app.staff_id', ?, false)",
-                [(string) auth()->id()]
-            );
+            $staff = auth()->user();
+            DB::statement("SET app.staff_id = '{$staff->id}'");
+            DB::statement("SET app.current_tenant_id = '{$staff->tenant_id}'");
         }
 
         return $next($request);
@@ -38,7 +37,8 @@ class SetStaffContext
         // This terminate() cleanup acts as a secondary safety net, though the main
         // fix is at the connection pooler level (Session Mode).
         if (auth()->check() && DB::connection()->getDriverName() === 'pgsql') {
-            DB::statement("SELECT set_config('app.staff_id', '', false)");
+            DB::statement("RESET app.staff_id");
+            DB::statement("RESET app.current_tenant_id");
         }
     }
 }

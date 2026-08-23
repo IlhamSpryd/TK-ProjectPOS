@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class SaleReturn extends Model
 {
     use HasFactory;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'sale_returns';
 
@@ -18,6 +19,7 @@ class SaleReturn extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'tenant_id',
         'sale_id',
         'staff_id',
         'return_date',

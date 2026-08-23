@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class PurchaseOrder extends Model
 {
     use HasFactory;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'purchase_orders';
 
@@ -16,6 +17,7 @@ class PurchaseOrder extends Model
     public $incrementing = false;
 
     protected $fillable = [
+        'tenant_id',
         'store_id',
         'supplier_id',
         'staff_id',
