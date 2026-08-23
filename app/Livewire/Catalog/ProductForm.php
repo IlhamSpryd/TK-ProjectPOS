@@ -41,7 +41,7 @@ class ProductForm extends Component
     public ?string $existingImage = null;
 
     // Additional Product specs
-    public array $attributes = [];
+    public array $product_attributes = [];
 
     // Variants array
     public array $variants = [];
@@ -61,7 +61,7 @@ class ProductForm extends Component
             $this->is_service = $product->is_service;
             $this->active = $product->active;
             $this->existingImage = $product->image_url;
-            $this->attributes = $product->attributes ?? [];
+            $this->product_attributes = $product->attributes ?? [];
 
             foreach ($product->variants as $variant) {
                 $this->variants[] = [
@@ -147,7 +147,7 @@ class ProductForm extends Component
                         'track_stock' => $this->track_stock,
                         'is_service' => $this->is_service,
                         'active' => $this->active,
-                        'attributes' => $this->attributes,
+                        'attributes' => $this->product_attributes,
                     ];
 
                     if ($imagePath) {
@@ -166,7 +166,7 @@ class ProductForm extends Component
                         'track_stock' => $this->track_stock,
                         'is_service' => $this->is_service,
                         'active' => $this->active,
-                        'attributes' => $this->attributes,
+                        'attributes' => $this->product_attributes,
                         'image_url' => $imagePath,
                     ]);
 
