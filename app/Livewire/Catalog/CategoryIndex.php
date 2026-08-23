@@ -28,7 +28,6 @@ class CategoryIndex extends Component
             $category = Category::findOrFail($id);
             // TODO: Tambahkan validasi pengecekan apakah kategori sedang digunakan oleh produk
             $category->delete();
-            Category::clearActiveCache();
             $this->dispatch('toast', message: 'Kategori berhasil dihapus.', type: 'success');
         } catch (\Exception $e) {
             Log::error('Gagal menghapus kategori: '.$e->getMessage());

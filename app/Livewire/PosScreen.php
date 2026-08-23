@@ -81,8 +81,11 @@ class PosScreen extends Component
             }
 
             $this->cart[$variantId] = [
-                'name' => $variant->product->name.' '.$variant->sku,
-                'sku' => $variant->sku,
+                'name' => $variant->product->name.' '.($variant->sku ?? ''),
+                'product_name' => $variant->product->name,
+                'sku' => $variant->sku ?? '',
+                'unit' => $variant->product->unit ?? '',
+                'attributes' => $variant->attributes ?? [],
                 'price' => $variant->selling_price,
                 'quantity' => 1,
                 'stock' => $stock,

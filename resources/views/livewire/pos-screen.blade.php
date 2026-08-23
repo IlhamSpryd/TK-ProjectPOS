@@ -316,6 +316,20 @@
                     @endif
                 </div>
 
+                @error('process')
+                    <div class="mb-3 px-3 py-2 bg-rose-50 border border-rose-200 rounded text-rose-600 text-[12px] font-medium flex items-start gap-2">
+                        <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span>{{ $message }}</span>
+                    </div>
+                @enderror
+
+                @error('cart')
+                    <div class="mb-3 px-3 py-2 bg-rose-50 border border-rose-200 rounded text-rose-600 text-[12px] font-medium flex items-start gap-2">
+                        <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span>{{ $message }}</span>
+                    </div>
+                @enderror
+
                 <button wire:click="processPayment" wire:loading.attr="disabled"
                     {{ count($cart) === 0 || ($cash_received < $this->grandTotal && $this->payment_method === 'cash') ? 'disabled' : '' }}
                     class="w-full py-2 bg-neutral-800 text-white rounded-md text-[13px] font-medium hover:bg-neutral-900 disabled:opacity-50 transition-colors flex justify-center items-center gap-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-400">
@@ -364,6 +378,40 @@
                     <span>Rp {{ number_format($lastSale?->change_amount ?? 0, 0, ',', '.') }}</span>
                 </div>
             </div>
+
+            @if($lastSale && $lastSale->items)
+                <div class="bg-white rounded-xl border border-neutral-100 p-4 mb-6 text-left max-h-60 overflow-y-auto">
+                    <h4 class="text-sm font-bold text-neutral-800 mb-3">Item Pembelian</h4>
+                    <div class="space-y-3 divide-y divide-neutral-50">
+                        @foreach($lastSale->items as $item)
+                            <div class="pt-2 first:pt-0">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="text-[13px] font-semibold text-neutral-800">{{ $item->product_name }}</p>
+                                        @if($item->variant_sku)
+                                            <p class="text-[11px] text-neutral-500 font-mono mt-0.5">SKU: {{ $item->variant_sku }}</p>
+                                        @endif
+                                        
+                                        @if($item->variant_attributes)
+                                            <div class="flex flex-wrap gap-1 mt-1">
+                                                @foreach(is_string($item->variant_attributes) ? json_decode($item->variant_attributes, true) ?? [] : $item->variant_attributes as $key => $val)
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-neutral-100 text-neutral-600 border border-neutral-200">
+                                                        {{ $key }}: {{ $val }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        @endif
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-[13px] font-semibold text-neutral-800">Rp {{ number_format($item->unit_price * $item->quantity, 0, ',', '.') }}</p>
+                                        <p class="text-[11px] text-neutral-500">{{ $item->quantity }} {{ $item->unit ?? 'pcs' }} @ Rp {{ number_format($item->unit_price, 0, ',', '.') }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
 
             <div class="flex flex-col gap-3">
                 <x-ui.button variant="primary" class="w-full justify-center">

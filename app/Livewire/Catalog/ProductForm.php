@@ -42,6 +42,7 @@ class ProductForm extends Component
 
     // Additional Product specs
     public array $product_attributes = [];
+    public array $product_attributes_list = [];
 
     // Variants array
     public array $variants = [];
@@ -62,15 +63,25 @@ class ProductForm extends Component
             $this->active = $product->active;
             $this->existingImage = $product->image_url;
             $this->product_attributes = $product->attributes ?? [];
+            foreach ($this->product_attributes as $key => $value) {
+                $this->product_attributes_list[] = ['key' => $key, 'value' => $value];
+            }
 
             foreach ($product->variants as $variant) {
+                $varAttrList = [];
+                $varAttrs = $variant->attributes ?? [];
+                foreach ($varAttrs as $k => $v) {
+                    $varAttrList[] = ['key' => $k, 'value' => $v];
+                }
+
                 $this->variants[] = [
                     'id' => $variant->id,
                     'sku' => $variant->sku ?? '',
                     'barcode' => $variant->barcode ?? '',
                     'cost_price' => $variant->cost_price ?? 0,
                     'selling_price' => $variant->selling_price ?? 0,
-                    'attributes' => $variant->attributes ?? [],
+                    'attributes' => $varAttrs,
+                    'attributes_list' => $varAttrList,
                     'active' => $variant->active,
                     'is_deleted' => false,
                 ];
@@ -90,6 +101,7 @@ class ProductForm extends Component
             'cost_price' => 0,
             'selling_price' => 0,
             'attributes' => [],
+            'attributes_list' => [],
             'active' => true,
             'is_deleted' => false,
         ];
@@ -103,6 +115,28 @@ class ProductForm extends Component
             unset($this->variants[$index]);
             $this->variants = array_values($this->variants);
         }
+    }
+
+    public function addProductAttribute(): void
+    {
+        $this->product_attributes_list[] = ['key' => '', 'value' => ''];
+    }
+
+    public function removeProductAttribute(int $index): void
+    {
+        unset($this->product_attributes_list[$index]);
+        $this->product_attributes_list = array_values($this->product_attributes_list);
+    }
+
+    public function addVariantAttribute(int $variantIndex): void
+    {
+        $this->variants[$variantIndex]['attributes_list'][] = ['key' => '', 'value' => ''];
+    }
+
+    public function removeVariantAttribute(int $variantIndex, int $attrIndex): void
+    {
+        unset($this->variants[$variantIndex]['attributes_list'][$attrIndex]);
+        $this->variants[$variantIndex]['attributes_list'] = array_values($this->variants[$variantIndex]['attributes_list']);
     }
 
     protected function rules(): array
@@ -132,8 +166,16 @@ class ProductForm extends Component
         try {
             DB::transaction(function () {
                 $imagePath = $this->image
-                    ? $this->image->store('products', 'public')
+                    ? $this->image->store('products/' . auth()->user()->tenant_id, 'public')
                     : null;
+
+                // Format attributes from lists back to associative arrays
+                $this->product_attributes = [];
+                foreach ($this->product_attributes_list as $attr) {
+                    if (trim($attr['key']) !== '') {
+                        $this->product_attributes[trim($attr['key'])] = trim($attr['value']);
+                    }
+                }
 
                 if ($this->productId) {
                     $product = Product::findOrFail($this->productId);
@@ -183,15 +225,28 @@ class ProductForm extends Component
                         continue;
                     }
 
+                    // Rebuild variant attributes associative array
+                    $varAttrs = [];
+                    if (isset($variantData['attributes_list'])) {
+                        foreach ($variantData['attributes_list'] as $attr) {
+                            if (trim($attr['key']) !== '') {
+                                $varAttrs[trim($attr['key'])] = trim($attr['value']);
+                            }
+                        }
+                    }
+
                     if ($variantData['id']) {
-                        ProductVariant::where('id', $variantData['id'])->update([
-                            'sku' => $variantData['sku'] ?: null,
-                            'barcode' => $variantData['barcode'] ?: null,
-                            'cost_price' => $variantData['cost_price'] ?: 0,
-                            'selling_price' => $variantData['selling_price'] ?: 0,
-                            'attributes' => $variantData['attributes'] ?? [],
-                            'active' => $variantData['active'],
-                        ]);
+                        $pv = ProductVariant::find($variantData['id']);
+                        if ($pv) {
+                            $pv->update([
+                                'sku' => $variantData['sku'] ?: null,
+                                'barcode' => $variantData['barcode'] ?: null,
+                                'cost_price' => $variantData['cost_price'] ?: 0,
+                                'selling_price' => $variantData['selling_price'] ?: 0,
+                                'attributes' => $varAttrs,
+                                'active' => $variantData['active'],
+                            ]);
+                        }
                     } else {
                         ProductVariant::create([
                             'id' => Str::uuid()->toString(),
@@ -200,7 +255,7 @@ class ProductForm extends Component
                             'barcode' => $variantData['barcode'] ?: null,
                             'cost_price' => $variantData['cost_price'] ?: 0,
                             'selling_price' => $variantData['selling_price'] ?: 0,
-                            'attributes' => $variantData['attributes'] ?? [],
+                            'attributes' => $varAttrs,
                             'active' => $variantData['active'],
                         ]);
                     }

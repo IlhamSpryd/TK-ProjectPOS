@@ -15,8 +15,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement('CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_product_variants_product_id ON product_variants(product_id)');
-        DB::statement('CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_category_store ON products(category_id, store_id)');
+        DB::connection('pgsql_admin')->unprepared('CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_product_variants_product_id ON product_variants(product_id)');
+        DB::connection('pgsql_admin')->unprepared('CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_category_tenant ON products(category_id, tenant_id)');
     }
 
     /**
@@ -24,7 +24,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement('DROP INDEX CONCURRENTLY IF EXISTS idx_products_category_store');
-        DB::statement('DROP INDEX CONCURRENTLY IF EXISTS idx_product_variants_product_id');
+        DB::connection('pgsql_admin')->unprepared('DROP INDEX CONCURRENTLY IF EXISTS idx_products_category_tenant');
+        DB::connection('pgsql_admin')->unprepared('DROP INDEX CONCURRENTLY IF EXISTS idx_product_variants_product_id');
     }
 };

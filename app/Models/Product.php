@@ -28,6 +28,7 @@ class Product extends Model
         'image_url',
         'unit',
         'sku',
+        'attributes',
         'track_stock',
         'is_service',
         'active',

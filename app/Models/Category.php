@@ -6,9 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Auth;
+
 class Category extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
     use \App\Traits\BelongsToTenant;
 
     protected $table = 'categories';
@@ -29,19 +33,10 @@ class Category extends Model
         'active' => 'boolean',
     ];
 
-    protected static $activeCache = null;
-
     public static function activeCached(): Collection
     {
-        if (self::$activeCache === null) {
-            self::$activeCache = self::where('active', true)->orderBy('name')->get();
-        }
-
-        return self::$activeCache;
+        return self::where('active', true)->orderBy('name')->get();
     }
 
-    public static function clearActiveCache(): void
-    {
-        self::$activeCache = null;
-    }
+
 }

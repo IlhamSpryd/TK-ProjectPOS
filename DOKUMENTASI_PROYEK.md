@@ -39,6 +39,7 @@ Dokumen ini berisi rangkuman komprehensif mengenai status proyek aplikasi Point 
 | `app/Models/Staff.php` | Model untuk tabel `staff`. Berkas ini sangat vital karena digunakan sebagai model Autentikasi. Di sini kita mendeklarasikan bahwa *password* menggunakan kolom `password_hash`. |
 | `app/Models/*.php` | Kumpulan 21 model lainnya (seperti `Product.php`, `Sale.php`). Dibuat menggunakan _script_ generator Python agar otomatis menggunakan UUID dan tidak *incrementing*. |
 | `app/Models/ProductVariant.php` | Diperbarui dengan menambahkan fungsi relasi `stocks()` ke entitas `InventoryStock` agar *Eager Loading* di POS berjalan tanpa *error relation not found*. |
+| `app/Models/Category.php` | Diperbarui untuk mengimplementasikan *SoftDeletes* dan perbaikan manajemen *cache* dengan menghapus `Cache::remember`. Hal ini dilakukan untuk menghindari *error* deserialisasi `__PHP_Incomplete_Class` karena *cache driver* tidak mendukung trait tersebut dengan baik di arsitektur multi-tenant. Pengambilan data sekarang 100% menggunakan *query* langsung yang sangat cepat berkat RLS. |
 | `app/Http/Middleware/SetStaffContext.php` | Middleware keamanan yang memasukkan ID *staff* yang sedang *login* ke variabel _session_ di PostgreSQL. Sangat penting untuk fitur RLS Supabase. |
 | `config/auth.php` | Konfigurasi autentikasi telah diubah agar default _guard_ `web` menggunakan *provider* yang mengarah ke model `Staff` (bukan `User`). |
 | `config/fortify.php` | Pengaturan *backend* autentikasi Laravel. Telah diedit untuk mematikan fitur 2FA, registrasi, dan Passkey. |
