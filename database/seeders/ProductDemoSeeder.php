@@ -2,15 +2,14 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 use App\Models\Category;
+use App\Models\InventoryMovement;
+use App\Models\InventoryStock;
 use App\Models\Product;
 use App\Models\ProductVariant;
-use App\Models\InventoryStock;
-use App\Models\InventoryMovement;
 use App\Models\Store;
-use Carbon\Carbon;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class ProductDemoSeeder extends Seeder
 {
@@ -20,8 +19,9 @@ class ProductDemoSeeder extends Seeder
     public function run(): void
     {
         $store = Store::first();
-        if (!$store) {
+        if (! $store) {
             $this->command->warn('No store found. Ensure a store exists before running ProductDemoSeeder.');
+
             return;
         }
 
@@ -35,7 +35,7 @@ class ProductDemoSeeder extends Seeder
         $categoryIds = [];
         foreach ($categories as $catName) {
             $cat = Category::where('name', $catName)->first();
-            if (!$cat) {
+            if (! $cat) {
                 $cat = Category::create([
                     'id' => Str::uuid()->toString(),
                     'name' => $catName,
@@ -79,26 +79,26 @@ class ProductDemoSeeder extends Seeder
 
         foreach ($products as $prodInfo) {
             $product = Product::where('sku', $prodInfo['sku_base'])->first();
-            if (!$product) {
+            if (! $product) {
                 $product = Product::create([
                     'id' => Str::uuid()->toString(),
                     'sku' => $prodInfo['sku_base'],
                     'category_id' => $categoryIds[$prodInfo['cat']],
                     'name' => $prodInfo['name'],
                     'active' => true,
-                    'track_stock' => true
+                    'track_stock' => true,
                 ]);
             }
 
-            $variant = ProductVariant::where('sku', $prodInfo['sku_base'] . '-1')->first();
-            if (!$variant) {
+            $variant = ProductVariant::where('sku', $prodInfo['sku_base'].'-1')->first();
+            if (! $variant) {
                 $variant = ProductVariant::create([
                     'id' => Str::uuid()->toString(),
-                    'sku' => $prodInfo['sku_base'] . '-1',
+                    'sku' => $prodInfo['sku_base'].'-1',
                     'product_id' => $product->id,
                     'cost_price' => $prodInfo['cost'],
                     'selling_price' => $prodInfo['price'],
-                    'active' => true
+                    'active' => true,
                 ]);
             }
 
@@ -106,8 +106,8 @@ class ProductDemoSeeder extends Seeder
             $movement = InventoryMovement::where('variant_id', $variant->id)
                 ->where('note', 'Initial Stock Seeder')
                 ->first();
-                
-            if (!$movement) {
+
+            if (! $movement) {
                 // Add stock via movement
                 $movementId = Str::uuid()->toString();
                 InventoryMovement::create([
@@ -118,12 +118,12 @@ class ProductDemoSeeder extends Seeder
                     'quantity_change' => 50,
                     'reference_table' => 'seeder',
                     'reference_id' => Str::uuid()->toString(),
-                    'note' => 'Initial Stock Seeder'
+                    'note' => 'Initial Stock Seeder',
                 ]);
-                
+
                 $stock = InventoryStock::where('store_id', $store->id)
-                            ->where('variant_id', $variant->id)
-                            ->first();
+                    ->where('variant_id', $variant->id)
+                    ->first();
                 if ($stock) {
                     $stock->quantity += 50;
                     $stock->save();

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Staff;
 use App\Models\User;
 
 return [
@@ -64,7 +65,7 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'staff',
-            'model' => env('AUTH_MODEL', App\Models\Staff::class),
+            'model' => env('AUTH_MODEL', Staff::class),
         ],
 
         // 'users' => [

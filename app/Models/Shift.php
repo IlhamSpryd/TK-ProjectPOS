@@ -8,13 +8,18 @@ use Illuminate\Database\Eloquent\Model;
 class Shift extends Model
 {
     use HasFactory;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'shifts';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
+
     public $timestamps = false;
 
     protected $fillable = [
+        'tenant_id',
         'register_id',
         'staff_id',
         'opened_at',
@@ -23,7 +28,7 @@ class Shift extends Model
         'expected_cash',
         'actual_cash',
         'difference',
-        'notes'
+        'notes',
     ];
 
     protected $casts = [
@@ -33,9 +38,16 @@ class Shift extends Model
         'opening_cash' => 'decimal:2',
         'expected_cash' => 'decimal:2',
         'actual_cash' => 'decimal:2',
-        'difference' => 'decimal:2'
+        'difference' => 'decimal:2',
     ];
 
-    public function register() { return $this->belongsTo(Register::class); }
-    public function staff() { return $this->belongsTo(Staff::class); }
+    public function register()
+    {
+        return $this->belongsTo(Register::class);
+    }
+
+    public function staff()
+    {
+        return $this->belongsTo(Staff::class);
+    }
 }

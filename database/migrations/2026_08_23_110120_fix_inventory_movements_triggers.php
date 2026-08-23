@@ -10,7 +10,67 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Trigger 1: Stock Increment on Purchase Order Item Received
+        // Fix Trigger 1: Stock Decrement on Sale Item Insert (Remove updated_at from inventory_movements)
+        DB::connection('pgsql_admin')->unprepared("
+            CREATE OR REPLACE FUNCTION fn_decrement_stock_on_sale_item()
+            RETURNS TRIGGER
+            LANGUAGE plpgsql
+            SECURITY DEFINER
+            SET search_path = public
+            AS $$
+            DECLARE
+              v_store_id   uuid;
+              v_staff_id   uuid;
+              v_track_stock boolean;
+              v_new_qty    numeric;
+            BEGIN
+              -- Ambil store_id & staff_id dari HEADER sales, bukan dari input sale_items
+              SELECT store_id, staff_id INTO v_store_id, v_staff_id
+              FROM sales WHERE id = NEW.sale_id;
+            
+              IF v_store_id IS NULL THEN
+                RAISE EXCEPTION 'Sale % tidak ditemukan', NEW.sale_id;
+              END IF;
+            
+              SELECT p.track_stock INTO v_track_stock
+              FROM product_variants pv
+              JOIN products p ON p.id = pv.product_id
+              WHERE pv.id = NEW.variant_id;
+            
+              IF v_track_stock IS DISTINCT FROM TRUE THEN
+                RETURN NEW; -- item jasa / non-stok, lewati
+              END IF;
+            
+              -- Atomic decrement
+              UPDATE inventory_stock
+                 SET quantity = quantity - NEW.quantity,
+                     updated_at = now()
+               WHERE variant_id = NEW.variant_id
+                 AND store_id = v_store_id
+              RETURNING quantity INTO v_new_qty;
+            
+              IF NOT FOUND THEN
+                RAISE EXCEPTION 'Baris stok untuk variant % di store % tidak ditemukan', NEW.variant_id, v_store_id;
+              END IF;
+            
+              IF v_new_qty < 0 THEN
+                RAISE EXCEPTION 'Stok tidak cukup untuk variant % (sisa setelah transaksi: %)', NEW.variant_id, v_new_qty;
+              END IF;
+            
+              INSERT INTO inventory_movements (
+                id, tenant_id, variant_id, store_id, movement_type, quantity_change,
+                reference_table, reference_id, staff_id, created_at
+              ) VALUES (
+                gen_random_uuid(), NEW.tenant_id, NEW.variant_id, v_store_id, 'sale', -NEW.quantity,
+                'sale_items', NEW.id, v_staff_id, now()
+              );
+            
+              RETURN NEW;
+            END;
+            $$;
+        ");
+
+        // Fix Trigger 2: Stock Increment on Purchase Order Item Received
         DB::connection('pgsql_admin')->unprepared("
             CREATE OR REPLACE FUNCTION fn_increment_stock_on_po_item_received()
             RETURNS TRIGGER
@@ -56,26 +116,20 @@ return new class extends Migration
                   END IF;
                 
                   INSERT INTO inventory_movements (
-                    id, variant_id, store_id, movement_type, quantity_change,
-                    reference_table, reference_id, staff_id, created_at, updated_at
+                    id, tenant_id, variant_id, store_id, movement_type, quantity_change,
+                    reference_table, reference_id, staff_id, created_at
                   ) VALUES (
-                    gen_random_uuid(), NEW.variant_id, v_store_id, 'purchase', NEW.received_quantity,
-                    'purchase_order_items', NEW.id, get_current_staff_id(), now(), now()
+                    gen_random_uuid(), NEW.tenant_id, NEW.variant_id, v_store_id, 'purchase', NEW.received_quantity,
+                    'purchase_order_items', NEW.id, get_current_staff_id(), now()
                   );
               END IF;
             
               RETURN NEW;
             END;
             $$;
-            
-            DROP TRIGGER IF EXISTS trg_increment_stock_on_po_item_received ON purchase_order_items;
-            CREATE TRIGGER trg_increment_stock_on_po_item_received
-            AFTER UPDATE ON purchase_order_items
-            FOR EACH ROW
-            EXECUTE FUNCTION fn_increment_stock_on_po_item_received();
         ");
 
-        // Trigger 2: Stock Increment on Sale Return Item Restock
+        // Fix Trigger 3: Stock Increment on Sale Return Item Restock
         DB::connection('pgsql_admin')->unprepared("
             CREATE OR REPLACE FUNCTION fn_increment_stock_on_sale_return_item()
             RETURNS TRIGGER
@@ -130,23 +184,17 @@ return new class extends Migration
                   END IF;
                 
                   INSERT INTO inventory_movements (
-                    id, variant_id, store_id, movement_type, quantity_change,
-                    reference_table, reference_id, staff_id, created_at, updated_at
+                    id, tenant_id, variant_id, store_id, movement_type, quantity_change,
+                    reference_table, reference_id, staff_id, created_at
                   ) VALUES (
-                    gen_random_uuid(), v_variant_id, v_store_id, 'sale_return', NEW.quantity,
-                    'sale_return_items', NEW.id, get_current_staff_id(), now(), now()
+                    gen_random_uuid(), NEW.tenant_id, v_variant_id, v_store_id, 'sale_return', NEW.quantity,
+                    'sale_return_items', NEW.id, get_current_staff_id(), now()
                   );
               END IF;
             
               RETURN NEW;
             END;
             $$;
-            
-            DROP TRIGGER IF EXISTS trg_increment_stock_on_sale_return_item ON sale_return_items;
-            CREATE TRIGGER trg_increment_stock_on_sale_return_item
-            AFTER INSERT ON sale_return_items
-            FOR EACH ROW
-            EXECUTE FUNCTION fn_increment_stock_on_sale_return_item();
         ");
     }
 
@@ -155,12 +203,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::connection('pgsql_admin')->unprepared('
-            DROP TRIGGER IF EXISTS trg_increment_stock_on_sale_return_item ON sale_return_items;
-            DROP FUNCTION IF EXISTS fn_increment_stock_on_sale_return_item();
-            
-            DROP TRIGGER IF EXISTS trg_increment_stock_on_po_item_received ON purchase_order_items;
-            DROP FUNCTION IF EXISTS fn_increment_stock_on_po_item_received();
-        ');
+        // Nothing to revert realistically, this just fixes a bug
     }
 };

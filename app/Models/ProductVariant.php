@@ -10,19 +10,23 @@ class ProductVariant extends Model
 {
     use HasFactory;
     use SoftDeletes;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'product_variants';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
 
     protected $fillable = [
+        'tenant_id',
         'product_id',
         'sku',
         'barcode',
         'attributes',
         'cost_price',
         'selling_price',
-        'active'
+        'active',
     ];
 
     protected $casts = [
@@ -30,9 +34,16 @@ class ProductVariant extends Model
         'attributes' => 'array',
         'cost_price' => 'decimal:2',
         'selling_price' => 'decimal:2',
-        'active' => 'boolean'
+        'active' => 'boolean',
     ];
 
-    public function product() { return $this->belongsTo(Product::class); }
-    public function stocks() { return $this->hasMany(InventoryStock::class, 'variant_id'); }
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
+
+    public function stocks()
+    {
+        return $this->hasMany(InventoryStock::class, 'variant_id');
+    }
 }

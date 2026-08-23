@@ -10,12 +10,16 @@ class Product extends Model
 {
     use HasFactory;
     use SoftDeletes;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'products';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
 
     protected $fillable = [
+        'tenant_id',
         'category_id',
         'supplier_id',
         'tax_category_id',
@@ -24,20 +28,37 @@ class Product extends Model
         'image_url',
         'unit',
         'sku',
+        'attributes',
         'track_stock',
         'is_service',
-        'active'
+        'active',
     ];
 
     protected $casts = [
         'id' => 'string',
+        'attributes' => 'array',
         'track_stock' => 'boolean',
         'is_service' => 'boolean',
-        'active' => 'boolean'
+        'active' => 'boolean',
     ];
 
-    public function category() { return $this->belongsTo(Category::class); }
-    public function supplier() { return $this->belongsTo(Supplier::class); }
-    public function taxCategory() { return $this->belongsTo(TaxCategory::class); }
-    public function variants() { return $this->hasMany(ProductVariant::class, 'product_id'); }
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
+    public function taxCategory()
+    {
+        return $this->belongsTo(TaxCategory::class);
+    }
+
+    public function variants()
+    {
+        return $this->hasMany(ProductVariant::class, 'product_id');
+    }
 }

@@ -1,8 +1,6 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -135,7 +133,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        $sql = "
+        $sql = '
             -- Restore Sales
             DROP POLICY IF EXISTS sales_select ON sales;
             DROP POLICY IF EXISTS sales_insert ON sales;
@@ -188,7 +186,7 @@ return new class extends Migration
             
             DROP POLICY IF EXISTS customers_insert ON customers;
             CREATE POLICY customers_insert ON customers FOR INSERT WITH CHECK (true);
-        ";
+        ';
         DB::connection('pgsql_admin')->unprepared($sql);
     }
 };

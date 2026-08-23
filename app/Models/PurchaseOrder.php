@@ -8,12 +8,16 @@ use Illuminate\Database\Eloquent\Model;
 class PurchaseOrder extends Model
 {
     use HasFactory;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'purchase_orders';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
 
     protected $fillable = [
+        'tenant_id',
         'store_id',
         'supplier_id',
         'staff_id',
@@ -24,7 +28,7 @@ class PurchaseOrder extends Model
         'discount_total',
         'tax_total',
         'grand_total',
-        'notes'
+        'notes',
     ];
 
     protected $casts = [
@@ -33,11 +37,26 @@ class PurchaseOrder extends Model
         'subtotal' => 'decimal:2',
         'discount_total' => 'decimal:2',
         'tax_total' => 'decimal:2',
-        'grand_total' => 'decimal:2'
+        'grand_total' => 'decimal:2',
     ];
 
-    public function store() { return $this->belongsTo(Store::class); }
-    public function supplier() { return $this->belongsTo(Supplier::class); }
-    public function staff() { return $this->belongsTo(Staff::class); }
-    public function items() { return $this->hasMany(PurchaseOrderItem::class); }
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
+    public function staff()
+    {
+        return $this->belongsTo(Staff::class);
+    }
+
+    public function items()
+    {
+        return $this->hasMany(PurchaseOrderItem::class);
+    }
 }

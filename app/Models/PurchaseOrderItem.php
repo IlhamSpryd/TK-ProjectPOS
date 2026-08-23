@@ -8,20 +8,25 @@ use Illuminate\Database\Eloquent\Model;
 class PurchaseOrderItem extends Model
 {
     use HasFactory;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'purchase_order_items';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
+
     public $timestamps = false;
 
     protected $fillable = [
+        'tenant_id',
         'purchase_order_id',
         'variant_id',
         'quantity',
         'cost_price',
         'discount',
         'received_quantity',
-        'received'
+        'received',
     ];
 
     protected $casts = [
@@ -30,9 +35,16 @@ class PurchaseOrderItem extends Model
         'cost_price' => 'decimal:2',
         'discount' => 'decimal:2',
         'received_quantity' => 'decimal:2',
-        'received' => 'boolean'
+        'received' => 'boolean',
     ];
 
-    public function purchaseOrder() { return $this->belongsTo(PurchaseOrder::class); }
-    public function variant() { return $this->belongsTo(ProductVariant::class, 'variant_id'); }
+    public function purchaseOrder()
+    {
+        return $this->belongsTo(PurchaseOrder::class);
+    }
+
+    public function variant()
+    {
+        return $this->belongsTo(ProductVariant::class, 'variant_id');
+    }
 }

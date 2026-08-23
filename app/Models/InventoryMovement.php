@@ -8,13 +8,18 @@ use Illuminate\Database\Eloquent\Model;
 class InventoryMovement extends Model
 {
     use HasFactory;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'inventory_movements';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
+
     public $timestamps = false;
 
     protected $fillable = [
+        'tenant_id',
         'variant_id',
         'store_id',
         'movement_type',
@@ -22,15 +27,26 @@ class InventoryMovement extends Model
         'reference_table',
         'reference_id',
         'note',
-        'staff_id'
+        'staff_id',
     ];
 
     protected $casts = [
         'id' => 'string',
-        'quantity_change' => 'decimal:2'
+        'quantity_change' => 'decimal:2',
     ];
 
-    public function variant() { return $this->belongsTo(ProductVariant::class, 'variant_id'); }
-    public function store() { return $this->belongsTo(Store::class); }
-    public function staff() { return $this->belongsTo(Staff::class); }
+    public function variant()
+    {
+        return $this->belongsTo(ProductVariant::class, 'variant_id');
+    }
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
+    }
+
+    public function staff()
+    {
+        return $this->belongsTo(Staff::class);
+    }
 }

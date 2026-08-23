@@ -14,7 +14,8 @@ class Appearance extends Component
             'title' => 'Pengaturan',
             'breadcrumbs' => [
                 ['label' => 'Dashboard', 'route' => route('dashboard')],
-                ['label' => 'Pengaturan']
-            ]
+                ['label' => 'Pengaturan'],
+            ],
         ]);
     }
+}

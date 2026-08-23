@@ -9,24 +9,27 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Customer extends Model
 {
     use HasFactory, SoftDeletes;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'customers';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
 
     protected $fillable = [
+        'tenant_id',
         'name',
         'email',
         'phone',
         'address',
         'npwp',
         'loyalty_points',
-        'active'
+        'active',
     ];
 
     protected $casts = [
         'id' => 'string',
-        'active' => 'boolean'
+        'active' => 'boolean',
     ];
-
 }

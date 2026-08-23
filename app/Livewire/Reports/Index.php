@@ -2,11 +2,14 @@
 
 namespace App\Livewire\Reports;
 
-use Livewire\Component;
-use Livewire\WithPagination;
 use App\Models\Sale;
+use App\Models\SaleItem;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\HtmlString;
+use Livewire\Component;
+use Livewire\WithPagination;
 
 class Index extends Component
 {
@@ -34,7 +37,7 @@ class Index extends Component
             $query->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
         } elseif ($this->dateRange === 'month') {
             $query->whereMonth('created_at', Carbon::now()->month)
-                  ->whereYear('created_at', Carbon::now()->year);
+                ->whereYear('created_at', Carbon::now()->year);
         }
 
         $totals = (clone $query)->selectRaw("
@@ -44,9 +47,9 @@ class Index extends Component
 
         $totalRevenue = $totals->total_revenue ?? 0;
         $totalTransactions = $totals->total_transactions ?? 0;
-        
+
         // Optimasi: hitung items sold hanya dari id yang terfilter
-        $totalItemsSold = \App\Models\SaleItem::whereIn('sale_id', (clone $query)->select('id'))->sum('quantity');
+        $totalItemsSold = SaleItem::whereIn('sale_id', (clone $query)->select('id'))->sum('quantity');
 
         $sales = $query->with(['customer', 'store'])->orderBy('created_at', 'desc')->paginate(20);
 
@@ -54,16 +57,16 @@ class Index extends Component
             'sales' => $sales,
             'totalRevenue' => $totalRevenue,
             'totalTransactions' => $totalTransactions,
-            'totalItemsSold' => $totalItemsSold
+            'totalItemsSold' => $totalItemsSold,
         ])->layout('components.layouts.app', [
             'title' => 'Laporan Penjualan',
             'breadcrumbs' => [
                 ['label' => 'Dashboard', 'route' => route('dashboard')],
-                ['label' => 'Laporan']
+                ['label' => 'Laporan'],
             ],
-            'actions' => new \Illuminate\Support\HtmlString(\Illuminate\Support\Facades\Blade::render(
+            'actions' => new HtmlString(Blade::render(
                 '<x-ui.select name="dateRange" wire:model.live="dateRange" class="w-40 bg-white"><option value="today">Hari Ini</option><option value="week">Minggu Ini</option><option value="month">Bulan Ini</option></x-ui.select>'
-            ))
+            )),
         ]);
     }
 }

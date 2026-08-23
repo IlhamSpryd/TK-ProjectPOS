@@ -8,23 +8,31 @@ use Illuminate\Database\Eloquent\Model;
 class Register extends Model
 {
     use HasFactory;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'registers';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
+
     public $timestamps = false;
 
     protected $fillable = [
+        'tenant_id',
         'store_id',
         'name',
         'status',
-        'active'
+        'active',
     ];
 
     protected $casts = [
         'id' => 'string',
-        'active' => 'boolean'
+        'active' => 'boolean',
     ];
 
-    public function store() { return $this->belongsTo(Store::class); }
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
+    }
 }

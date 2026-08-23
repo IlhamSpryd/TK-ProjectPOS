@@ -2,9 +2,10 @@
 
 namespace App\Livewire\Stores;
 
+use App\Models\Store;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Models\Store;
 
 class Index extends Component
 {
@@ -26,26 +27,26 @@ class Index extends Component
             $store->delete();
             $this->dispatch('toast', message: 'Cabang berhasil dihapus.', type: 'success');
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Gagal menghapus cabang: ' . $e->getMessage());
+            Log::error('Gagal menghapus cabang: '.$e->getMessage());
             $this->dispatch('toast', message: 'Gagal menghapus cabang.', type: 'error');
         }
     }
 
     public function render()
     {
-        $stores = Store::where('name', 'ilike', '%' . $this->search . '%')
-            ->orWhere('city', 'ilike', '%' . $this->search . '%')
+        $stores = Store::where('name', 'ilike', '%'.$this->search.'%')
+            ->orWhere('city', 'ilike', '%'.$this->search.'%')
             ->orderBy('name')
             ->paginate(10);
 
         return view('livewire.stores.index', [
-            'stores' => $stores
+            'stores' => $stores,
         ])->layout('components.layouts.app', [
             'title' => 'Cabang',
             'breadcrumbs' => [
                 ['label' => 'Dashboard', 'route' => route('dashboard')],
-                ['label' => 'Cabang']
-            ]
+                ['label' => 'Cabang'],
+            ],
         ]);
     }
 }

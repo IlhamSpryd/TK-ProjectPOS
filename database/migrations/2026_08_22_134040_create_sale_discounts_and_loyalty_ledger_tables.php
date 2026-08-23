@@ -1,15 +1,13 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     /**
      * Run the migrations.
-     * 
+     *
      * Membuat:
      * 1. sale_discounts  — pelacak diskon per transaksi (audit A.1.1)
      * 2. loyalty_ledger  — ledger poin loyalty pelanggan (audit A.1.3)
@@ -65,7 +63,7 @@ return new class extends Migration
         ");
 
         // ─── 2. Tabel loyalty_ledger ────────────────────────────────────────────
-        DB::connection('pgsql_admin')->unprepared("
+        DB::connection('pgsql_admin')->unprepared('
             CREATE TABLE IF NOT EXISTS loyalty_ledger (
                 id              uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
                 customer_id     uuid         NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
@@ -87,10 +85,10 @@ return new class extends Migration
             CREATE POLICY loyalty_ledger_select ON loyalty_ledger
                 FOR SELECT USING (get_current_staff_id() IS NOT NULL);
             -- Staff manapun bisa lihat ledger pelanggan (global catalog model)
-        ");
+        ');
 
         // ─── 3. Trigger: sync customers.loyalty_points dari ledger ──────────────
-        DB::connection('pgsql_admin')->unprepared("
+        DB::connection('pgsql_admin')->unprepared('
             CREATE OR REPLACE FUNCTION fn_sync_loyalty_points()
             RETURNS TRIGGER
             LANGUAGE plpgsql
@@ -116,7 +114,7 @@ return new class extends Migration
             AFTER INSERT ON loyalty_ledger
             FOR EACH ROW
             EXECUTE FUNCTION fn_sync_loyalty_points();
-        ");
+        ');
 
         // ─── 4. Sequence-based sale number per store (Priority 6) ───────────────
         // Ganti pendekatan random dengan counter per store di database.
@@ -170,13 +168,13 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::connection('pgsql_admin')->unprepared("
+        DB::connection('pgsql_admin')->unprepared('
             DROP TRIGGER  IF EXISTS trg_sync_loyalty_points ON loyalty_ledger;
             DROP FUNCTION IF EXISTS fn_sync_loyalty_points();
             DROP FUNCTION IF EXISTS fn_next_sale_number(uuid);
             DROP TABLE    IF EXISTS sale_number_sequences;
             DROP TABLE    IF EXISTS loyalty_ledger;
             DROP TABLE    IF EXISTS sale_discounts;
-        ");
+        ');
     }
 };

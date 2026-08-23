@@ -9,23 +9,26 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Supplier extends Model
 {
     use HasFactory, SoftDeletes;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'suppliers';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
 
     protected $fillable = [
+        'tenant_id',
         'name',
         'contact_person',
         'phone',
         'email',
         'address',
-        'active'
+        'active',
     ];
 
     protected $casts = [
         'id' => 'string',
-        'active' => 'boolean'
+        'active' => 'boolean',
     ];
-
 }

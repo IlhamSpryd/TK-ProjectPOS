@@ -8,19 +8,24 @@ use Illuminate\Database\Eloquent\Model;
 class AuditLog extends Model
 {
     use HasFactory;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'audit_logs';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
+
     public $timestamps = false;
 
     protected $fillable = [
+        'tenant_id',
         'table_name',
         'record_id',
         'action',
         'old_data',
         'new_data',
-        'changed_by'
+        'changed_by',
     ];
 
     protected $casts = [

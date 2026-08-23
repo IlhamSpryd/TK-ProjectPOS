@@ -2,36 +2,50 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
-use App\Models\ProductVariant;
+use App\Models\Category;
 use App\Models\Customer;
+use App\Models\InventoryStock;
+use App\Models\ProductVariant;
 use App\Models\Sale;
+use App\Models\TaxCategory;
 use App\Services\SaleService;
 use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
-use Livewire\WithPagination;
 use Livewire\Attributes\Computed;
+use Livewire\Component;
+use Livewire\WithPagination;
 
 class PosScreen extends Component
 {
     use WithPagination;
 
     public string $search = '';
+
     public array $cart = [];
+
     public ?string $customer_id = null;
+
     public string $payment_method = 'cash';
+
     public $cash_received = 0;
+
     public $change_amount = 0;
+
     public ?Sale $lastSale = null;
-    public $customers = [];
-    
+
     // UI state
     public bool $showSuccessModal = false;
 
     public function mount()
     {
-        $this->customers = Customer::where('active', true)->limit(100)->get();
+        // ...
+    }
+
+    #[Computed]
+    public function customers()
+    {
+        return Customer::where('active', true)->orderBy('name')->limit(100)->get();
     }
 
     public function updatedSearch()
@@ -42,36 +56,41 @@ class PosScreen extends Component
     public function addToCart($variantId)
     {
         $variant = ProductVariant::with(['product', 'product.taxCategory'])->find($variantId);
-        
-        if (!$variant) return;
+
+        if (! $variant) {
+            return;
+        }
 
         // Cek stok (sederhana, stok riil mungkin butuh relasi yg lebih detail dgn store)
-        // Disini asumsikan jika ditambahkan ke cart, ada validasi. 
+        // Disini asumsikan jika ditambahkan ke cart, ada validasi.
         // Logic fix nya di SaleService, tapi kita cegah di UI juga minimal punya stok.
-        
+
         if (isset($this->cart[$variantId])) {
             $this->cart[$variantId]['quantity']++;
         } else {
             // Get stock for active store
             $staff = Auth::user();
             $store = $staff ? $staff->getActiveStore() : null;
-            
+
             $stock = 0;
             if ($store) {
-                $invStock = \App\Models\InventoryStock::where('store_id', $store->id)
+                $invStock = InventoryStock::where('store_id', $store->id)
                     ->where('variant_id', $variantId)
                     ->first();
                 $stock = $invStock ? $invStock->quantity : 0;
             }
 
             $this->cart[$variantId] = [
-                'name' => $variant->product->name . ' ' . $variant->sku,
-                'sku' => $variant->sku,
+                'name' => $variant->product->name.' '.($variant->sku ?? ''),
+                'product_name' => $variant->product->name,
+                'sku' => $variant->sku ?? '',
+                'unit' => $variant->product->unit ?? '',
+                'attributes' => $variant->attributes ?? [],
                 'price' => $variant->selling_price,
                 'quantity' => 1,
                 'stock' => $stock,
                 'discount' => 0,
-                'image_url' => $variant->product->image_url
+                'image_url' => $variant->product->image_url,
             ];
         }
 
@@ -83,7 +102,7 @@ class PosScreen extends Component
         if (isset($this->cart[$variantId])) {
             // Validasi jika quantity lbih besar drpd stok
             if ($quantity > $this->cart[$variantId]['stock']) {
-                $this->addError('cart', 'Stok tidak mencukupi (Tersedia: ' . $this->cart[$variantId]['stock'] . ')');
+                $this->addError('cart', 'Stok tidak mencukupi (Tersedia: '.$this->cart[$variantId]['stock'].')');
                 $quantity = $this->cart[$variantId]['stock'];
             }
             if ($quantity <= 0) {
@@ -94,7 +113,7 @@ class PosScreen extends Component
         }
         $this->calculateTotals();
     }
-    
+
     // Tambah fungsi menambah dan mengurang qty via tombol
     public function incrementQuantity($variantId)
     {
@@ -102,7 +121,7 @@ class PosScreen extends Component
             $this->updateQuantity($variantId, $this->cart[$variantId]['quantity'] + 1);
         }
     }
-    
+
     public function decrementQuantity($variantId)
     {
         if (isset($this->cart[$variantId])) {
@@ -115,7 +134,7 @@ class PosScreen extends Component
         if (isset($this->cart[$variantId])) {
             // Limit discount to not exceed the price * quantity
             $maxDiscount = $this->cart[$variantId]['price'] * $this->cart[$variantId]['quantity'];
-            $discountAmount = min((float)$discount, $maxDiscount);
+            $discountAmount = min((float) $discount, $maxDiscount);
             $this->cart[$variantId]['discount'] = max(0, $discountAmount);
         }
         $this->calculateTotals();
@@ -149,26 +168,27 @@ class PosScreen extends Component
     {
         if (empty($this->cart)) {
             $this->addError('cart', 'Keranjang masih kosong');
+
             return;
         }
 
         try {
             $staff = Auth::user();
-            
+
             $data = [
                 'cart' => $this->cart,
                 'customer_id' => $this->customer_id,
                 'payment_method' => $this->payment_method,
                 'cash_received' => $this->payment_method === 'cash' ? (float) $this->cash_received : $this->grandTotal(),
-                'notes' => ''
+                'notes' => '',
             ];
 
             $sale = $saleService->createSale($data, $staff);
-            
+
             $this->lastSale = $sale;
             $this->clearCart();
             $this->showSuccessModal = true;
-            
+
         } catch (Exception $e) {
             $this->addError('process', $e->getMessage());
         }
@@ -207,42 +227,54 @@ class PosScreen extends Component
     public function taxTotal()
     {
         $tax = 0;
-        
+
         $staff = Auth::user();
-        if(!$staff) return 0;
-        
+        if (! $staff) {
+            return 0;
+        }
+
         $store = $staff->getActiveStore();
-        if(!$store) return 0;
-        
-        // Batch load tax categories to fix N+1
-        $taxCategoryIds = collect($this->cart)
-            ->map(function ($item, $variantId) use ($store) {
-                // Gunakan static query atau pastikan variant di-cache jika memungkinkan. 
-                // Di sini kita fetch ulang ringan, atau idealnya variant data sudah ada di cart.
-                $variant = ProductVariant::with(['product'])->find($variantId);
-                return $variant->product->tax_category_id ?? $store->default_tax_category_id;
-            })
-            ->filter()
-            ->unique();
-            
-        $taxCategories = \App\Models\TaxCategory::whereIn('id', $taxCategoryIds)
-            ->get()
-            ->keyBy('id');
-            
-        // Gunakan eager loading untuk semua varian di cart sekaligus
+        if (! $store) {
+            return 0;
+        }
+
+        if (empty($this->cart)) {
+            return 0;
+        }
+
+        // 1. Fetch semua varian di cart sekaligus (1 query)
         $variants = ProductVariant::with(['product'])->whereIn('id', array_keys($this->cart))->get()->keyBy('id');
 
-        foreach($this->cart as $variantId => $item) {
-             $variant = $variants->get($variantId);
-             if (!$variant) continue;
-             $taxCategoryId = $variant->product->tax_category_id ?? $store->default_tax_category_id;
-             if($taxCategoryId && isset($taxCategories[$taxCategoryId])) {
-                 $taxCategory = $taxCategories[$taxCategoryId];
-                 // Asumsi sederhana tanpa validasi kombinasi di sini
-                 $amountBeforeTax = ($item['price'] * $item['quantity']) - $item['discount'];
-                 $tax += $amountBeforeTax * ($taxCategory->rate / 100);
-             }
+        // 2. Kumpulkan semua tax_category_id yang dibutuhkan
+        $taxCategoryIds = [];
+        foreach ($this->cart as $variantId => $item) {
+            $variant = $variants->get($variantId);
+            if ($variant) {
+                $taxCategoryIds[] = $variant->product->tax_category_id ?? $store->default_tax_category_id;
+            }
         }
+        $taxCategoryIds = array_filter(array_unique($taxCategoryIds));
+
+        // 3. Fetch tax categories (1 query)
+        $taxCategories = TaxCategory::whereIn('id', $taxCategoryIds)
+            ->get()
+            ->keyBy('id');
+
+        // 4. Hitung pajak
+        foreach ($this->cart as $variantId => $item) {
+            $variant = $variants->get($variantId);
+            if (! $variant) {
+                continue;
+            }
+
+            $taxCategoryId = $variant->product->tax_category_id ?? $store->default_tax_category_id;
+            if ($taxCategoryId && isset($taxCategories[$taxCategoryId])) {
+                $taxCategory = $taxCategories[$taxCategoryId];
+                $amountBeforeTax = ($item['price'] * $item['quantity']) - $item['discount'];
+                $tax += $amountBeforeTax * ($taxCategory->rate / 100);
+            }
+        }
+
         return $tax;
     }
 
@@ -251,7 +283,7 @@ class PosScreen extends Component
     {
         return $this->getSubtotalProperty() - $this->getDiscountTotalProperty() + $this->taxTotal();
     }
-    
+
     private function calculateTotals()
     {
         $grandTotal = $this->grandTotal();
@@ -268,31 +300,31 @@ class PosScreen extends Component
             ->where('active', true)
             ->whereHas('product', function ($q) {
                 $q->where('active', true)
-                  ->whereNull('deleted_at');
+                    ->whereNull('deleted_at');
             });
 
         if ($this->search) {
             $productsQuery->where(function ($q) {
-                $q->where('sku', 'like', '%' . $this->search . '%')
-                  ->orWhere('barcode', 'like', '%' . $this->search . '%')
-                  ->orWhereHas('product', function ($q2) {
-                      $q2->where('name', 'like', '%' . $this->search . '%');
-                  });
+                $q->where('sku', 'like', '%'.$this->search.'%')
+                    ->orWhere('barcode', 'like', '%'.$this->search.'%')
+                    ->orWhereHas('product', function ($q2) {
+                        $q2->where('name', 'like', '%'.$this->search.'%');
+                    });
             });
         }
 
         $products = $productsQuery->simplePaginate(24);
-        
+
         // Perbaikan P-03: Preload stok produk untuk halaman aktif (N+1 fix)
         $stockMap = [];
         if ($storeId && $products->isNotEmpty()) {
-            $stockMap = \App\Models\InventoryStock::where('store_id', $storeId)
+            $stockMap = InventoryStock::where('store_id', $storeId)
                 ->whereIn('variant_id', $products->pluck('id'))
                 ->pluck('quantity', 'variant_id');
         }
 
         // Perbaikan P-06: Cache categories
-        $categories = \App\Models\Category::where('active', true)->get();
+        $categories = Category::activeCached();
 
         return view('livewire.pos-screen', [
             'products' => $products,
@@ -300,7 +332,7 @@ class PosScreen extends Component
             'storeId' => $storeId,
             'stockMap' => $stockMap,
         ])->layout('components.layouts.app', [
-            'title' => 'Kasir / POS'
+            'title' => 'Kasir / POS',
         ]);
     }
 }

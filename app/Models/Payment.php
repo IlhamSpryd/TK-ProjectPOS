@@ -8,27 +8,35 @@ use Illuminate\Database\Eloquent\Model;
 class Payment extends Model
 {
     use HasFactory;
+    use \App\Traits\BelongsToTenant;
 
     protected $table = 'payments';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
+
     public $timestamps = false;
 
     protected $fillable = [
+        'tenant_id',
         'sale_id',
         'payment_method',
         'amount',
         'change_amount',
         'reference_no',
-        'paid_at'
+        'paid_at',
     ];
 
     protected $casts = [
         'id' => 'string',
         'amount' => 'decimal:2',
         'change_amount' => 'decimal:2',
-        'paid_at' => 'datetime'
+        'paid_at' => 'datetime',
     ];
 
-    public function sale() { return $this->belongsTo(Sale::class); }
+    public function sale()
+    {
+        return $this->belongsTo(Sale::class);
+    }
 }

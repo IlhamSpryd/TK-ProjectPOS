@@ -8,13 +8,16 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Store extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, \App\Traits\BelongsToTenant;
 
     protected $table = 'stores';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
 
     protected $fillable = [
+        'tenant_id',
         'name',
         'business_type',
         'is_pkp',
@@ -27,14 +30,18 @@ class Store extends Model
         'currency',
         'timezone',
         'active',
-        'default_tax_category_id'
+        'default_tax_category_id',
     ];
 
     protected $casts = [
         'id' => 'string',
+        'settings' => 'array',
         'is_pkp' => 'boolean',
-        'active' => 'boolean'
+        'active' => 'boolean',
     ];
 
-    public function staff() { return $this->belongsToMany(Staff::class, 'staff_stores')->withPivot('is_primary'); }
+    public function staff()
+    {
+        return $this->belongsToMany(Staff::class, 'staff_stores')->withPivot('is_primary');
+    }
 }

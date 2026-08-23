@@ -1,4 +1,5 @@
 <?php
+
 // app/Auth/StaffUserProvider.php
 
 namespace App\Auth;

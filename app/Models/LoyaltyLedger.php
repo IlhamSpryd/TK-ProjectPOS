@@ -6,12 +6,18 @@ use Illuminate\Database\Eloquent\Model;
 
 class LoyaltyLedger extends Model
 {
+    use \App\Traits\BelongsToTenant;
+
     protected $table = 'loyalty_ledger';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
+
     public $timestamps = false;
 
     protected $fillable = [
+        'tenant_id',
         'customer_id',
         'sale_id',
         'points_change',
@@ -19,9 +25,9 @@ class LoyaltyLedger extends Model
     ];
 
     protected $casts = [
-        'id'            => 'string',
+        'id' => 'string',
         'points_change' => 'integer',
-        'created_at'    => 'datetime',
+        'created_at' => 'datetime',
     ];
 
     public function customer()

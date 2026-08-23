@@ -2,10 +2,12 @@
 
 namespace App\Livewire\Catalog;
 
+use App\Models\Product;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\HtmlString;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Models\Product;
-use Illuminate\Support\Facades\Log;
 
 class ProductIndex extends Component
 {
@@ -27,7 +29,7 @@ class ProductIndex extends Component
             $product->delete();
             $this->dispatch('toast', message: 'Produk berhasil dihapus.', type: 'success');
         } catch (\Exception $e) {
-            Log::error('Gagal menghapus produk: ' . $e->getMessage());
+            Log::error('Gagal menghapus produk: '.$e->getMessage());
             $this->dispatch('toast', message: 'Gagal menghapus produk.', type: 'error');
         }
     }
@@ -35,7 +37,7 @@ class ProductIndex extends Component
     public function render()
     {
         $products = Product::with(['category', 'variants'])
-            ->where('name', 'ilike', '%' . $this->search . '%')
+            ->where('name', 'ilike', '%'.$this->search.'%')
             ->orderBy('name')
             ->paginate(10);
 
@@ -44,11 +46,11 @@ class ProductIndex extends Component
                 'title' => 'Katalog Produk',
                 'breadcrumbs' => [
                     ['label' => 'Dashboard', 'route' => route('dashboard')],
-                    ['label' => 'Katalog Produk']
+                    ['label' => 'Katalog Produk'],
                 ],
-                'actions' => new \Illuminate\Support\HtmlString(\Illuminate\Support\Facades\Blade::render(
+                'actions' => new HtmlString(Blade::render(
                     '<x-ui.button variant="primary" icon="plus" href="{{ route(\'catalog.products.create\') }}" wire:navigate>Tambah Produk</x-ui.button>'
-                ))
+                )),
             ]);
     }
 }

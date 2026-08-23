@@ -6,12 +6,18 @@ use Illuminate\Database\Eloquent\Model;
 
 class SaleDiscount extends Model
 {
+    use \App\Traits\BelongsToTenant;
+
     protected $table = 'sale_discounts';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
+
     public $timestamps = false;
 
     protected $fillable = [
+        'tenant_id',
         'sale_id',
         'discount_id',
         'label',
@@ -21,10 +27,10 @@ class SaleDiscount extends Model
     ];
 
     protected $casts = [
-        'id'             => 'string',
-        'value'          => 'decimal:4',
+        'id' => 'string',
+        'value' => 'decimal:4',
         'amount_applied' => 'decimal:4',
-        'created_at'     => 'datetime',
+        'created_at' => 'datetime',
     ];
 
     public function sale()
