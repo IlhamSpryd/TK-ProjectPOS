@@ -64,7 +64,8 @@ class Dashboard extends Component
             }
         }
 
-        return view('dashboard', [
+        $view = 'dashboard';
+        return view($view, [
             'todayRevenue' => $todayRevenue,
             'activeProducts' => $activeProducts,
             'totalSalesToday' => $totalSalesToday,

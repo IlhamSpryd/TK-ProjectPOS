@@ -22,10 +22,20 @@
     class="hidden md:block sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-neutral-200 px-6 md:px-8 py-4">
     <div class="flex items-center justify-between gap-4">
         <div class="flex items-center gap-4 min-w-0">
-            <!-- Hamburger Button -->
-            <button @click="sidebarOpen = true" x-show="!sidebarOpen" aria-controls="main-sidebar"
-                :aria-expanded="sidebarOpen.toString()" aria-label="Buka sidebar"
-                class="p-2 -ml-2 rounded-md text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:outline-none transition-colors shrink-0">
+            <!-- Desktop: toggle collapsed/expanded sidebar -->
+            <button @click="sidebarCollapsed = !sidebarCollapsed"
+                aria-controls="main-sidebar"
+                :aria-expanded="(!sidebarCollapsed).toString()"
+                aria-label="Toggle sidebar"
+                class="hidden lg:flex p-2 -ml-2 rounded-md text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:outline-none transition-colors shrink-0">
+                <flux:icon name="bars-3" variant="outline" class="w-5 h-5 shrink-0 stroke-2" />
+            </button>
+            <!-- Tablet: open overlay sidebar -->
+            <button @click="sidebarOpen = true" x-show="!sidebarOpen"
+                aria-controls="main-sidebar"
+                :aria-expanded="sidebarOpen.toString()"
+                aria-label="Buka sidebar"
+                class="hidden md:flex lg:hidden p-2 -ml-2 rounded-md text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:outline-none transition-colors shrink-0">
                 <flux:icon name="bars-3" variant="outline" class="w-5 h-5 shrink-0 stroke-2" />
             </button>
 

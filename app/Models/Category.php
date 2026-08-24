@@ -38,5 +38,8 @@ class Category extends Model
         return self::where('active', true)->orderBy('name')->get();
     }
 
-
+    public function products()
+    {
+        return $this->hasMany(Product::class);
+    }
 }

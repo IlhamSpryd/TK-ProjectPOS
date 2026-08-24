@@ -33,19 +33,8 @@ class TaxCategory extends Model
         'active' => 'boolean',
     ];
 
-    protected static $activeCache = null;
-
     public static function activeCached(): Collection
     {
-        if (self::$activeCache === null) {
-            self::$activeCache = self::where('active', true)->orderBy('name')->get();
-        }
-
-        return self::$activeCache;
-    }
-
-    public static function clearActiveCache(): void
-    {
-        self::$activeCache = null;
+        return self::where('active', true)->orderBy('name')->get();
     }
 }

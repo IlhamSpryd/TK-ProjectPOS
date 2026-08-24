@@ -3,6 +3,7 @@
 namespace App\Livewire\Stores;
 
 use App\Models\Store;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -22,6 +23,8 @@ class Index extends Component
 
     public function deleteStore($id)
     {
+        Gate::authorize('manage_stores');
+
         try {
             $store = Store::findOrFail($id);
             $store->delete();
@@ -34,12 +37,18 @@ class Index extends Component
 
     public function render()
     {
-        $stores = Store::where('name', 'ilike', '%'.$this->search.'%')
-            ->orWhere('city', 'ilike', '%'.$this->search.'%')
+        $stores = Store::query()
+            ->when($this->search, function ($query) {
+                $query->where(function ($q) {
+                    $q->where('name', 'ilike', '%'.$this->search.'%')
+                      ->orWhere('city', 'ilike', '%'.$this->search.'%');
+                });
+            })
             ->orderBy('name')
             ->paginate(10);
 
-        return view('livewire.stores.index', [
+        $view = 'livewire.stores.index';
+        return view($view, [
             'stores' => $stores,
         ])->layout('components.layouts.app', [
             'title' => 'Cabang',

@@ -15,21 +15,35 @@
     @fluxAppearance
 </head>
 
-<body x-data="{ sidebarOpen: false, ready: false }" x-init="$nextTick(() => ready = true)"
+{{--
+    Alpine state:
+    - sidebarOpen      : mobile/tablet off-canvas overlay (true = visible)
+    - sidebarCollapsed : desktop icon-rail vs full sidebar (true = icon only)
+    - ready            : delay transitions on first paint to prevent flash
+--}}
+<body x-data="{ sidebarOpen: false, sidebarCollapsed: true, ready: false }"
+    x-init="$nextTick(() => ready = true)"
     class="flex min-h-screen text-neutral-900 antialiased bg-neutral-50 overflow-x-hidden">
 
-    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-white focus:text-neutral-900 font-medium rounded-br-lg shadow-sm">Lewati ke konten utama</a>
+    <a href="#main-content"
+        class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-white focus:text-neutral-900 font-medium rounded-br-lg shadow-sm">Lewati
+        ke konten utama</a>
 
     <x-layouts.sidebar />
 
     <x-layouts.topbar-mobile :title="$title" />
 
+    {{--
+        Main shifts right on desktop (lg+) to account for persistent sidebar.
+        - Collapsed (default) → lg:pl-16 (64px = sidebar icon-rail width)
+        - Expanded            → lg:pl-64 (256px = sidebar full width)
+        Transition is smooth to match sidebar width animation.
+    --}}
     <main id="main-content"
-        class="flex-1 flex flex-col min-h-screen {{ request()->routeIs('pos') ? 'pt-0' : 'pt-16 md:pt-0' }} relative min-w-0">
+        :class="sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64'"
+        class="{{ request()->routeIs('pos') ? 'pt-0' : 'pt-16 md:pt-0' }} flex-1 flex flex-col min-h-screen relative min-w-0 transition-[padding] duration-300 ease-out">
 
-        {{-- Header halaman desktop: dilewati untuk POS (layar kasir full-bleed)
-             dan hanya muncul kalau view memang mengirim title/breadcrumbs,
-             supaya tidak dobel dengan judul yang sudah ada di dalam slot. --}}
+        {{-- Desktop page header. Skipped for POS (full-bleed). --}}
         @unless (request()->routeIs('pos'))
             @if ($title || !empty($breadcrumbs))
                 <x-layouts.topbar :title="$title" :breadcrumbs="$breadcrumbs">

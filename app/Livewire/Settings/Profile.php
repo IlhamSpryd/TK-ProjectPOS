@@ -87,7 +87,8 @@ class Profile extends Component
 
     public function render()
     {
-        return view('livewire.settings.profile')->layout('components.layouts.app', [
+        $view = 'livewire.settings.profile';
+        return view($view)->layout('components.layouts.app', [
             'title' => 'Pengaturan',
             'breadcrumbs' => [
                 ['label' => 'Dashboard', 'route' => route('dashboard')],

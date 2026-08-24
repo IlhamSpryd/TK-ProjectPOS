@@ -50,7 +50,8 @@ class MovementIndex extends Component
 
         $movements = $query->orderBy('created_at', 'desc')->paginate(15);
 
-        return view('livewire.inventory.movement-index', [
+        $view = 'livewire.inventory.movement-index';
+        return view($view, [
             'movements' => $movements,
             'store' => $store,
         ])

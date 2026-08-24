@@ -4,6 +4,7 @@ namespace App\Livewire\Catalog;
 
 use App\Models\Category;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\HtmlString;
 use Livewire\Component;
@@ -24,9 +25,19 @@ class CategoryIndex extends Component
 
     public function deleteCategory($id)
     {
+        Gate::authorize('manage_catalog');
+
         try {
-            $category = Category::findOrFail($id);
-            // TODO: Tambahkan validasi pengecekan apakah kategori sedang digunakan oleh produk
+            $category = Category::withCount('products')->findOrFail($id);
+
+            if ($category->products_count > 0) {
+                $this->dispatch('toast',
+                    message: "Kategori masih dipakai oleh {$category->products_count} produk. Pindahkan produk terlebih dahulu.",
+                    type: 'error'
+                );
+                return;
+            }
+
             $category->delete();
             $this->dispatch('toast', message: 'Kategori berhasil dihapus.', type: 'success');
         } catch (\Exception $e) {
@@ -42,7 +53,8 @@ class CategoryIndex extends Component
             ->orderBy('name')
             ->paginate(10);
 
-        return view('livewire.catalog.category-index', [
+        $view = 'livewire.catalog.category-index';
+        return view($view, [
             'categories' => $categories,
         ])->layout('components.layouts.app', [
             'title' => 'Kategori Produk',

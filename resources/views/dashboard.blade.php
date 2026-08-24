@@ -110,7 +110,7 @@
                                     </div>
 
                                     <!-- Bar -->
-                                    <div class="w-full max-w-[40px] bg-primary-400 rounded-t-lg transition-all duration-300 hover:bg-primary-500 cursor-pointer"
+                                    <div class="w-full max-w-[40px] bg-neutral-700 rounded-t-lg transition-all duration-300 hover:bg-neutral-900 cursor-pointer"
                                          :style="`height: ${Math.max(5, (value / maxData) * 100)}%;`">
                                     </div>
                                     

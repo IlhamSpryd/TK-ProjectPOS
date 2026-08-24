@@ -4,6 +4,7 @@ namespace App\Livewire\Catalog;
 
 use App\Models\Product;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\HtmlString;
 use Livewire\Component;
@@ -22,6 +23,8 @@ class ProductIndex extends Component
 
     public function deleteProduct($id)
     {
+        Gate::authorize('manage_catalog');
+
         try {
             $product = Product::findOrFail($id);
             // This will cascade delete variants via DB constraints or model events
@@ -41,7 +44,8 @@ class ProductIndex extends Component
             ->orderBy('name')
             ->paginate(10);
 
-        return view('livewire.catalog.product-index', compact('products'))
+        $view = 'livewire.catalog.product-index';
+        return view($view, compact('products'))
             ->layout('components.layouts.app', [
                 'title' => 'Katalog Produk',
                 'breadcrumbs' => [

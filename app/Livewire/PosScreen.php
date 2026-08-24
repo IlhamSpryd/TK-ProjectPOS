@@ -326,7 +326,8 @@ class PosScreen extends Component
         // Perbaikan P-06: Cache categories
         $categories = Category::activeCached();
 
-        return view('livewire.pos-screen', [
+        $view = 'livewire.pos-screen';
+        return view($view, [
             'products' => $products,
             'categories' => $categories,
             'storeId' => $storeId,

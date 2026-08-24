@@ -3,6 +3,7 @@
 namespace App\Livewire\Customers;
 
 use App\Models\Customer;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Livewire\Component;
@@ -56,6 +57,7 @@ class Form extends Component
 
     public function save()
     {
+        Gate::authorize('manage_customers');
         $this->validate();
 
         try {
@@ -94,6 +96,7 @@ class Form extends Component
 
     public function render()
     {
-        return view('livewire.customers.form');
+        $view = 'livewire.customers.form';
+        return view($view);
     }
 }
