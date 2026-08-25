@@ -26,16 +26,9 @@
             <button @click="sidebarCollapsed = !sidebarCollapsed"
                 aria-controls="main-sidebar"
                 :aria-expanded="(!sidebarCollapsed).toString()"
-                aria-label="Toggle sidebar"
-                class="hidden lg:flex p-2 -ml-2 rounded-md text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:outline-none transition-colors shrink-0">
-                <flux:icon name="bars-3" variant="outline" class="w-5 h-5 shrink-0 stroke-2" />
-            </button>
-            <!-- Tablet: open overlay sidebar -->
-            <button @click="sidebarOpen = true" x-show="!sidebarOpen"
-                aria-controls="main-sidebar"
-                :aria-expanded="sidebarOpen.toString()"
-                aria-label="Buka sidebar"
-                class="hidden md:flex lg:hidden p-2 -ml-2 rounded-md text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:outline-none transition-colors shrink-0">
+                :aria-label="sidebarCollapsed ? 'Perluas sidebar' : 'Perkecil sidebar'"
+                :title="sidebarCollapsed ? 'Buka sidebar' : 'Tutup sidebar'"
+                class="hidden md:flex p-2 -ml-2 rounded-md text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:outline-none transition-colors shrink-0">
                 <flux:icon name="bars-3" variant="outline" class="w-5 h-5 shrink-0 stroke-2" />
             </button>
 

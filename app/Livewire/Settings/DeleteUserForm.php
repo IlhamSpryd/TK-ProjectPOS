@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Settings;
 
-use App\Concerns\PasswordValidationRules;
+use App\Actions\Fortify\PasswordValidationRules;
 use App\Livewire\Actions\Logout;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;

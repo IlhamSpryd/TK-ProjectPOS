@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Settings;
 
-use App\Concerns\ProfileValidationRules;
+use App\Actions\Fortify\ProfileValidationRules;
 use Flux\Flux;
 /* @chisel-email-verification */
 use Illuminate\Contracts\Auth\MustVerifyEmail;

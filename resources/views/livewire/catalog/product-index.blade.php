@@ -1,16 +1,4 @@
 <div>
-
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-            <h2 class="text-h2 text-neutral-900">Produk</h2>
-            <p class="text-body-sm text-neutral-500 mt-1">Kelola katalog produk beserta varian dan harganya.</p>
-        </div>
-        <x-ui.button variant="primary" icon="plus" href="{{ route('catalog.products.create') }}" wire:navigate
-            class="shrink-0">
-            Tambah Produk
-        </x-ui.button>
-    </div>
-
     <x-ui.card class="p-0 overflow-hidden border-neutral-200">
         <div
             class="p-4 border-b border-neutral-200 bg-neutral-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

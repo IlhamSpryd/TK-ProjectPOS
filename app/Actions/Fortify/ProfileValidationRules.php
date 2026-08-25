@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Concerns;
+namespace App\Actions\Fortify;
 
 use App\Models\Staff;
 use Illuminate\Contracts\Validation\ValidationRule;

@@ -1,37 +1,39 @@
 @props(['item'])
 
 @php
-    $isActive   = request()->routeIs($item['match']);
-    $stateClass = $isActive
-        ? 'bg-neutral-100 text-neutral-900 font-medium'
-        : 'text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 font-normal';
+    $active = request()->routeIs($item['match']);
 @endphp
 
-<a @if ($item['url'] != '#') href="{{ $item['url'] }}" wire:navigate.hover @else href="#" @endif
-    @if ($isActive) aria-current="page" @endif
-    data-nav-label="{{ $item['label'] }}"
-    :title="(sidebarCollapsed && !sidebarOpen) ? $el.dataset.navLabel : ''"
-    :class="sidebarCollapsed ? 'lg:justify-center lg:px-0' : 'lg:px-2'"
-    class="{{ $stateClass }} flex items-center h-9 w-full rounded-lg px-2 focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:outline-none transition-all duration-150 relative">
+<a href="{{ $item['url'] }}" wire:navigate.hover x-data="{ tipVisible: false, tipStyle: '' }"
+    @mouseenter="if (sidebarCollapsed && !sidebarOpen) {
+        const r = $el.getBoundingClientRect();
+        tipStyle = 'top:' + (r.top + r.height / 2) + 'px; left:' + (r.right + 10) + 'px;';
+        tipVisible = true;
+    }"
+    @mouseleave="tipVisible = false"
+    @focus="if (sidebarCollapsed && !sidebarOpen) {
+        const r = $el.getBoundingClientRect();
+        tipStyle = 'top:' + (r.top + r.height / 2) + 'px; left:' + (r.right + 10) + 'px;';
+        tipVisible = true;
+    }"
+    @blur="tipVisible = false" @if ($active) aria-current="page" @endif
+    class="relative flex items-center h-10 rounded-full text-[14px] transition-all duration-200 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900
+        {{ $active ? 'bg-[#e8eaed] text-neutral-900 font-semibold' : 'text-neutral-600 font-medium hover:bg-neutral-100 hover:text-neutral-900' }}"
+    :class="(sidebarCollapsed && !sidebarOpen) ? 'w-11 justify-center mx-auto px-0' : 'w-full px-3.5 gap-3'">
+    <flux:icon :name="$item['icon']" variant="outline"
+        class="w-5 h-5 shrink-0 transition-colors {{ $active ? 'text-neutral-900' : 'text-neutral-500 group-hover:text-neutral-900' }}" />
 
-    {{-- Active indicator: left accent bar —
-         disembunyikan saat icon-only (tidak ada ruang untuk accent bar 2px) --}}
-    @if ($isActive)
-        <span
-            class="absolute left-0 top-1 bottom-1 w-0.5 rounded-r bg-neutral-900 transition-opacity duration-200"
-            :class="sidebarCollapsed ? 'lg:opacity-0' : 'opacity-100'"
-            aria-hidden="true">
-        </span>
-    @endif
+    <span class="whitespace-nowrap overflow-hidden transition-[opacity,width] duration-200"
+        :class="(sidebarCollapsed && !sidebarOpen) ? 'opacity-0 w-0' : 'opacity-100 w-auto'">{{ $item['label'] }}</span>
 
-    {{-- Icon: selalu terlihat --}}
-    <flux:icon name="{{ $item['icon'] }}" variant="outline"
-        class="w-[18px] h-[18px] shrink-0 stroke-2 transition-colors" />
-
-    {{-- Label: hilang saat collapsed di desktop (lg+) --}}
-    <span
-        class="text-body-sm whitespace-nowrap ml-3 transition-[opacity,max-width] duration-200 overflow-hidden"
-        :class="sidebarCollapsed ? 'lg:opacity-0 lg:max-w-0 lg:ml-0' : 'opacity-100 max-w-xs'">
-        {{ $item['label'] }}
-    </span>
+    {{-- Tooltip: teleported to <body> so the collapsed 72px rail never clips it --}}
+    <template x-teleport="body">
+        <div x-show="tipVisible" x-transition:enter="transition ease-out duration-150"
+            x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+            x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="opacity-0 scale-95" :style="tipStyle"
+            style="position: fixed; transform: translateY(-50%);"
+            class="z-[60] px-2.5 py-1.5 rounded-md bg-neutral-900 text-white text-[13px] font-medium whitespace-nowrap shadow-lg pointer-events-none"
+            x-cloak>{{ $item['label'] }}</div>
+    </template>
 </a>

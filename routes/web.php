@@ -16,6 +16,7 @@ Route::redirect('/', '/dashboard')->name('home');
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', Dashboard::class)->name('dashboard');
     Route::get('/pos', PosScreen::class)->middleware('permission:pos_access')->name('pos');
+    Route::get('/api/pos/catalog', \App\Http\Controllers\PosCatalogController::class)->middleware('permission:pos_access')->name('api.pos.catalog');
 
     // Katalog
     Route::get('/katalog/kategori', CategoryIndex::class)->middleware('permission:manage_catalog')->name('catalog.categories');

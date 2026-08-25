@@ -5,12 +5,21 @@ namespace App\Traits;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * Trait BelongsToTenant
+ *
+ * Menerapkan Global Scope untuk memisahkan data antar tenant (multi-tenancy).
+ * Secara otomatis menambahkan `tenant_id` ke query dan saat pembuatan data.
+ */
 trait BelongsToTenant
 {
+    /**
+     * Boot trait untuk mendaftarkan global scope dan event model.
+     */
     protected static function bootBelongsToTenant()
     {
-        // DEFENSE-IN-DEPTH: scope SEMUA query (SELECT/UPDATE/DELETE) per tenant
-        // di layer aplikasi, tidak hanya mengandalkan RLS Postgres.
+        // DEFENSE-IN-DEPTH: Filter SEMUA query (SELECT/UPDATE/DELETE) berdasarkan tenant
+        // di layer aplikasi, selain perlindungan dari RLS Postgres.
         static::addGlobalScope('tenant', function (Builder $builder) {
             if (Auth::check()) {
                 $tenantId = Auth::user()->tenant_id ?? null;
@@ -24,6 +33,7 @@ trait BelongsToTenant
             }
         });
 
+        // Otomatis isi tenant_id saat pembuatan record baru
         static::creating(function ($model) {
             if (empty($model->tenant_id) && Auth::check()) {
                 $staff = Auth::user();
@@ -35,8 +45,8 @@ trait BelongsToTenant
     }
 
     /**
-     * Escape hatch eksplisit untuk kasus admin lintas tenant (mis. reporting global).
-     * Harus dipanggil sadar, tidak default.
+     * Escape hatch eksplisit untuk query lintas tenant (misal: pelaporan global admin super).
+     * Harus dipanggil secara sadar, tidak berlaku secara default.
      */
     public function scopeWithoutTenantScope(Builder $query): Builder
     {
