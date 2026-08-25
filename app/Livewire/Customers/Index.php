@@ -3,6 +3,7 @@
 namespace App\Livewire\Customers;
 
 use App\Models\Customer;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\HtmlString;
@@ -24,6 +25,8 @@ class Index extends Component
 
     public function deleteCustomer($id)
     {
+        Gate::authorize('manage_customers');
+
         try {
             $customer = Customer::findOrFail($id);
             $customer->delete();
@@ -36,12 +39,18 @@ class Index extends Component
 
     public function render()
     {
-        $customers = Customer::where('name', 'ilike', '%'.$this->search.'%')
-            ->orWhere('phone', 'ilike', '%'.$this->search.'%')
+        $customers = Customer::query()
+            ->when($this->search, function ($query) {
+                $query->where(function ($q) {
+                    $q->where('name', 'ilike', '%'.$this->search.'%')
+                      ->orWhere('phone', 'ilike', '%'.$this->search.'%');
+                });
+            })
             ->orderBy('name')
             ->paginate(10);
 
-        return view('livewire.customers.index', [
+        $view = 'livewire.customers.index';
+        return view($view, [
             'customers' => $customers,
         ])->layout('components.layouts.app', [
             'title' => 'Pelanggan',

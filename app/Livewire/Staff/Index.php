@@ -4,6 +4,7 @@ namespace App\Livewire\Staff;
 
 use App\Models\Staff;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\HtmlString;
 use Livewire\Component;
@@ -24,6 +25,8 @@ class Index extends Component
 
     public function deleteStaff(string $id): void
     {
+        Gate::authorize('manage_staff');
+
         // Cegah staff menghapus akunnya sendiri
         if (auth()->id() === $id) {
             $this->dispatch('toast', message: 'Anda tidak dapat menghapus akun Anda sendiri.', type: 'error');
@@ -43,7 +46,10 @@ class Index extends Component
 
     public function render()
     {
-        $staffMembers = Staff::with('role')
+        $staffMembers = Staff::with(['role', 'stores'])
+            ->when(auth()->user()->isSuperAdmin(), function ($query) {
+                $query->withoutTenantScope();
+            })
             ->where(function ($q) {
                 $q->where('full_name', 'ilike', '%'.$this->search.'%')
                     ->orWhere('email', 'ilike', '%'.$this->search.'%');
@@ -51,7 +57,8 @@ class Index extends Component
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        return view('livewire.staff.index', [
+        $view = 'livewire.staff.index';
+        return view($view, [
             'staffMembers' => $staffMembers,
         ])->layout('components.layouts.app', [
             'title' => 'Manajemen Staff',

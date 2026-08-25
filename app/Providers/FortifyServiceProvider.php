@@ -6,11 +6,14 @@ namespace App\Providers;
 use App\Actions\Fortify\CreateNewUser;
 /* @end-chisel-registration */
 use App\Actions\Fortify\ResetUserPassword;
+use App\Models\Staff;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Fortify;
 
 class FortifyServiceProvider extends ServiceProvider
@@ -38,6 +41,20 @@ class FortifyServiceProvider extends ServiceProvider
      */
     private function configureActions(): void
     {
+        // Autentikasi kustom: tolak login staff yang dinonaktifkan (active = false)
+        Fortify::authenticateUsing(function (Request $request) {
+            $staff = Staff::where('email', $request->email)->first();
+
+            if ($staff && Hash::check($request->password, $staff->password_hash)) {
+                if (! $staff->active) {
+                    throw ValidationException::withMessages([
+                        'email' => ['Akun Anda telah dinonaktifkan. Hubungi administrator.'],
+                    ]);
+                }
+                return $staff;
+            }
+        });
+
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
 
         Fortify::updateUserPasswordsUsing(function ($user, array $input) {

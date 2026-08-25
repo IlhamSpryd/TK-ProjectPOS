@@ -11,8 +11,10 @@
             <x-ui.table>
             <x-slot:head>
                 <x-ui.table.th class="pl-6">Nama Lengkap</x-ui.table.th>
+                <x-ui.table.th>Cabang</x-ui.table.th>
                 <x-ui.table.th>Role</x-ui.table.th>
                 <x-ui.table.th>Email</x-ui.table.th>
+                <x-ui.table.th>Bergabung</x-ui.table.th>
                 <x-ui.table.th>Status</x-ui.table.th>
                 <x-ui.table.th class="text-right pr-6">Aksi</x-ui.table.th>
             </x-slot:head>
@@ -31,12 +33,16 @@
                         </div>
                     </x-ui.table.td>
                     <x-ui.table.td>
-                        <span class="inline-flex items-center rounded-full bg-primary-50 px-2 py-1 text-xs font-medium text-primary-700 ring-1 ring-inset ring-primary-600/10">
-                            {{ $staff->role?->name ?? 'N/A' }}
-                        </span>
+                        <span class="text-neutral-600">{{ $staff->stores->first()?->name ?? 'Semua Cabang' }}</span>
+                    </x-ui.table.td>
+                    <x-ui.table.td>
+                        <x-ui.badge variant="neutral">{{ $staff->role?->name ?? 'N/A' }}</x-ui.badge>
                     </x-ui.table.td>
                     <x-ui.table.td>
                         <span class="text-neutral-600">{{ $staff->email }}</span>
+                    </x-ui.table.td>
+                    <x-ui.table.td>
+                        <span class="text-neutral-600">{{ $staff->created_at ? $staff->created_at->format('d M Y') : '-' }}</span>
                     </x-ui.table.td>
                     <x-ui.table.td>
                         @if($staff->active)
@@ -78,9 +84,7 @@
                             </div>
                             <div>
                                 <span class="text-body font-medium text-neutral-800 block">{{ $staff->full_name }}</span>
-                                <span class="inline-flex items-center rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-medium text-primary-700 ring-1 ring-inset ring-primary-600/10 mt-1">
-                                    {{ $staff->role?->name ?? 'N/A' }}
-                                </span>
+                                <x-ui.badge variant="neutral" class="mt-1">{{ $staff->role?->name ?? 'N/A' }}</x-ui.badge>
                             </div>
                         </div>
                         <div>
@@ -91,9 +95,19 @@
                             @endif
                         </div>
                     </div>
-                    <div class="text-sm">
-                        <span class="text-neutral-500 block text-xs">Email</span>
-                        <span class="text-neutral-700 font-medium">{{ $staff->email }}</span>
+                    <div class="text-sm grid grid-cols-2 gap-y-3">
+                        <div>
+                            <span class="text-neutral-500 block text-xs">Email</span>
+                            <span class="text-neutral-700 font-medium">{{ $staff->email }}</span>
+                        </div>
+                        <div>
+                            <span class="text-neutral-500 block text-xs">Cabang</span>
+                            <span class="text-neutral-700 font-medium">{{ $staff->stores->first()?->name ?? 'Semua Cabang' }}</span>
+                        </div>
+                        <div>
+                            <span class="text-neutral-500 block text-xs">Bergabung</span>
+                            <span class="text-neutral-700 font-medium">{{ $staff->created_at ? $staff->created_at->format('d M Y') : '-' }}</span>
+                        </div>
                     </div>
                     <div class="flex items-center justify-end gap-2 pt-2 border-t border-neutral-100">
                         <x-ui.button size="sm" variant="ghost" icon="pencil-square" href="{{ route('staff.edit', $staff->id) }}" wire:navigate class="text-neutral-500 hover:text-primary-600" aria-label="Edit Staff" />

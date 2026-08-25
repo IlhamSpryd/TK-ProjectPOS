@@ -2,18 +2,18 @@
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <x-ui.card class="p-6 border-neutral-200">
-            <h3 class="text-body font-medium text-neutral-500 mb-2">Total Pendapatan</h3>
-            <div class="text-3xl font-bold text-neutral-800 tracking-tight">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</div>
+            <h3 class="text-body-sm font-medium text-neutral-500 mb-2">Total Pendapatan</h3>
+            <div class="text-display font-bold text-neutral-800 tracking-tight font-mono">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</div>
         </x-ui.card>
         
         <x-ui.card class="p-6 border-neutral-200">
-            <h3 class="text-body font-medium text-neutral-500 mb-2">Jumlah Transaksi</h3>
-            <div class="text-3xl font-bold text-neutral-800 tracking-tight">{{ number_format($totalTransactions) }}</div>
+            <h3 class="text-body-sm font-medium text-neutral-500 mb-2">Jumlah Transaksi</h3>
+            <div class="text-display font-bold text-neutral-800 tracking-tight font-mono">{{ number_format($totalTransactions) }}</div>
         </x-ui.card>
 
         <x-ui.card class="p-6 border-neutral-200">
-            <h3 class="text-body font-medium text-neutral-500 mb-2">Item Terjual</h3>
-            <div class="text-3xl font-bold text-neutral-800 tracking-tight">{{ number_format($totalItemsSold) }}</div>
+            <h3 class="text-body-sm font-medium text-neutral-500 mb-2">Item Terjual</h3>
+            <div class="text-display font-bold text-neutral-800 tracking-tight font-mono">{{ number_format($totalItemsSold) }}</div>
         </x-ui.card>
     </div>
 

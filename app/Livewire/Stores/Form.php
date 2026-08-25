@@ -4,6 +4,7 @@ namespace App\Livewire\Stores;
 
 use App\Models\Store;
 use App\Models\TaxCategory;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Livewire\Component;
@@ -93,6 +94,7 @@ class Form extends Component
 
     public function save()
     {
+        Gate::authorize('manage_stores');
         $this->validate();
 
         try {
@@ -147,7 +149,8 @@ class Form extends Component
     {
         $taxCategories = TaxCategory::activeCached();
 
-        return view('livewire.stores.form', [
+        $view = 'livewire.stores.form';
+        return view($view, [
             'taxCategories' => $taxCategories,
         ]);
     }

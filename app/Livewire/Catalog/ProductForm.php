@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
@@ -154,6 +155,7 @@ class ProductForm extends Component
 
     public function save(): void
     {
+        Gate::authorize('manage_catalog');
         $this->validate();
 
         $activeVariantsCount = collect($this->variants)->where('is_deleted', false)->count();
@@ -273,7 +275,8 @@ class ProductForm extends Component
 
     public function render()
     {
-        return view('livewire.catalog.product-form', [
+        $view = 'livewire.catalog.product-form';
+        return view($view, [
             'categories' => Category::activeCached(),
         ])
             ->layout('components.layouts.app', [

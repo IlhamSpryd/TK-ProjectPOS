@@ -1,34 +1,5 @@
 <div class="py-6">
-
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-            <h2 class="text-h2 text-neutral-900">Kategori Produk</h2>
-            <p class="text-body-sm text-neutral-500 mt-1">Kelola pengelompokan produk agar lebih mudah ditemukan di POS.
-            </p>
-        </div>
-        <x-ui.button variant="primary" icon="plus" wire:click="$dispatch('open-category-modal')" class="shrink-0">
-            Tambah Kategori
-        </x-ui.button>
-    </div>
-
     <x-ui.card class="p-0 overflow-hidden border-neutral-200">
-        <div
-            class="p-4 border-b border-neutral-200 bg-neutral-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div class="relative flex items-center w-full max-w-md">
-                <x-ui.input name="search" wire:model.live.debounce.300ms="search" icon="magnifying-glass"
-                    placeholder="Cari nama kategori..." class="w-full bg-white shadow-none pr-9" />
-                @if ($search)
-                    <button type="button" wire:click="$set('search', '')" aria-label="Hapus pencarian"
-                        class="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-full text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary-500">
-                        <flux:icon.x-mark class="w-4 h-4" />
-                    </button>
-                @endif
-            </div>
-            <p class="text-caption text-neutral-500 shrink-0" aria-live="polite">
-                {{ $categories->total() }} kategori{{ $search ? ' ditemukan' : '' }}
-            </p>
-        </div>
-
         <div wire:loading.class="opacity-60" wire:target="search" class="transition-opacity duration-150">
             <div class="hidden md:block">
                 <x-ui.table>

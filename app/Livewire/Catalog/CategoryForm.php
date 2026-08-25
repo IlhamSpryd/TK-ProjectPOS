@@ -3,6 +3,7 @@
 namespace App\Livewire\Catalog;
 
 use App\Models\Category;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Livewire\Component;
@@ -45,6 +46,7 @@ class CategoryForm extends Component
 
     public function save()
     {
+        Gate::authorize('manage_catalog');
         $this->validate();
 
         try {
@@ -84,7 +86,8 @@ class CategoryForm extends Component
             ->orderBy('name')
             ->get();
 
-        return view('livewire.catalog.category-form', [
+        $view = 'livewire.catalog.category-form';
+        return view($view, [
             'parentCategories' => $parentCategories,
         ]);
     }

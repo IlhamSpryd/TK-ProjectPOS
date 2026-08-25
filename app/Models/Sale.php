@@ -5,6 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Model Sale (Penjualan)
+ * 
+ * Merepresentasikan transaksi penjualan atau pesanan (termasuk hold order).
+ * Relasi utama: items, payments, customer, staff, store.
+ */
 class Sale extends Model
 {
     use HasFactory;
@@ -36,6 +42,7 @@ class Sale extends Model
         'voided_by',
         'voided_at',
         'notes',
+        'table_number',
     ];
 
     protected $casts = [

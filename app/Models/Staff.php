@@ -46,6 +46,11 @@ class Staff extends Authenticatable
         return $this->password_hash;
     }
 
+    public function getAuthPasswordName()
+    {
+        return 'password_hash';
+    }
+
     public function initials(): string
     {
         $names = explode(' ', $this->full_name);

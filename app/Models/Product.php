@@ -6,6 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * Model Product (Produk)
+ * 
+ * Merepresentasikan produk inti di katalog. Detail harga dan stok dikelola
+ * pada tingkat varian (ProductVariant).
+ */
 class Product extends Model
 {
     use HasFactory;

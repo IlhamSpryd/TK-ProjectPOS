@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Settings;
 
-use App\Concerns\PasswordValidationRules;
+use App\Actions\Fortify\PasswordValidationRules;
 /* @chisel-2fa */
 use Exception;
 /* @end-chisel-2fa */
@@ -273,7 +273,7 @@ class Security extends Component
     /**
      * Disable two-factor authentication for the user.
      */
-    public function disable(DisableTwoFactorAuthentication $disableTwoFactorAuthentication): void
+    public function disable(DisableTwoFactorAuthentication $disableTwoFactorAuthentication)
     {
         $disableTwoFactorAuthentication(auth()->user());
 
@@ -282,7 +282,8 @@ class Security extends Component
 
     public function render()
     {
-        return view('livewire.settings.security')->layout('components.layouts.app', [
+        $view = 'livewire.settings.security';
+        return view($view)->layout('components.layouts.app', [
             'title' => 'Pengaturan',
             'breadcrumbs' => [
                 ['label' => 'Dashboard', 'route' => route('dashboard')],

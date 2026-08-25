@@ -5,6 +5,7 @@ namespace App\Livewire\Staff;
 use App\Models\Role;
 use App\Models\Staff;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\HtmlString;
@@ -68,6 +69,7 @@ class Form extends Component
 
     public function save(): void
     {
+        Gate::authorize('manage_staff');
         $this->validate();
 
         try {
@@ -115,7 +117,8 @@ class Form extends Component
 
     public function render()
     {
-        return view('livewire.staff.form', [
+        $view = 'livewire.staff.form';
+        return view($view, [
             'roles' => Role::all(),
         ])
             ->layout('components.layouts.app', [

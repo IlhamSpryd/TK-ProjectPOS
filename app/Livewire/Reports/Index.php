@@ -53,7 +53,8 @@ class Index extends Component
 
         $sales = $query->with(['customer', 'store'])->orderBy('created_at', 'desc')->paginate(20);
 
-        return view('livewire.reports.index', [
+        $view = 'livewire.reports.index';
+        return view($view, [
             'sales' => $sales,
             'totalRevenue' => $totalRevenue,
             'totalTransactions' => $totalTransactions,

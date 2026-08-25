@@ -35,8 +35,16 @@ class Category extends Model
 
     public static function activeCached(): Collection
     {
-        return self::where('active', true)->orderBy('name')->get();
+        // P0-Area 2: Actually use caching instead of just returning the query result
+        return Cache::remember(
+            "categories:active:tenant:" . (Auth::user()?->tenant_id ?? 'global'),
+            now()->addMinutes(5),
+            fn () => self::where('active', true)->orderBy('name')->get()
+        );
     }
 
-
+    public function products()
+    {
+        return $this->hasMany(Product::class);
+    }
 }

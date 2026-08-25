@@ -8,6 +8,7 @@ use App\Models\ProductVariant;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
@@ -51,6 +52,7 @@ class MovementForm extends Component
 
     public function save()
     {
+        Gate::authorize('manage_inventory');
         $this->validate();
 
         $staff = Auth::user();
@@ -135,7 +137,8 @@ class MovementForm extends Component
             ->orderBy('sku')
             ->get();
 
-        return view('livewire.inventory.movement-form', compact('variants'))
+        $view = 'livewire.inventory.movement-form';
+        return view($view, compact('variants'))
             ->layout('components.layouts.app', [
                 'title' => 'Tambah Pergerakan',
                 'breadcrumbs' => [
